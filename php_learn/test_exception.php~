@@ -1,0 +1,189 @@
+<meta charset="utf-8"> 
+
+<!-- 顶层异常处理例子 -->
+<?php
+	function myException($exception)
+	{
+		echo "<b>顶层Exception:</b> " , $exception->getMessage();
+	}
+	 
+	set_exception_handler('myException');
+	//顶层出错,都会到这个异常处理!! 
+	//这是顶层出错的异常处理,所以没有catch,要使用set_exception_handler注册异常处理函数
+	 
+	function checkNum1($number)
+	{
+		if($number>1)
+		{
+			throw new Exception("变量值必须小于等于 1");//throw 原则 每一个 "throw" 必须对应至少一个 "catch"
+		}
+		return true;
+	}
+	//checkNum1(2);
+	//顶层出异常后,执行了 myException 后,也就结束脚本了
+?>
+
+
+<br>
+
+
+<!-- 简单例子 第一层顶层异常处理例子 -->
+<?php
+	// 创建一个有异常处理的函数
+	function checkNum2($number)
+	{
+	    if($number>1)
+	    {
+	        throw new Exception("变量值必须小于等于 1");
+	    }
+	        return true;
+	}
+	    
+	// 在 try 块 触发异常	
+	try				//第一层异常的try
+	{
+		checkNum2(2);	
+		// 如果抛出异常，以下文本不会输出
+		echo '如果输出该内容，说明 $number 变量';
+	}
+	//最外层try 里出现的异常 是 第一层异常
+	//第一层异常 执行 最外层catch 的异常处理的函数
+	//处理完后, 最外层try里异常触发处后面的内容就不用再执行了
+	
+	// 捕获异常
+	catch(Exception $e)		//第一层异常的catch
+	{
+	    echo 'Message: ' .$e->getMessage();
+	}
+	
+	//先执行try内容,
+	//当遇到异常错误(这个if()异常是人遭异常,也算是异常)碰到 throw
+	//会跳到catch 的内容继续到结束!!
+	//这时,就不会执行 echo '如果输出该内容，说明 $number 变量';
+?>
+
+
+<br>
+
+
+<!-- 自定义异常处理函数例子 -->
+<?php
+	class customException extends Exception		//自定义异常处理函数:customException
+	{
+	    public function errorMessage()
+	    {
+	        // 错误信息
+	        $errorMsg = '错误行号 '.$this->getLine().' in '.$this->getFile()
+	        .': <b>'.$this->getMessage().'</b> 不是一个合法的 E-Mail 地址';
+	        return $errorMsg;
+	    }
+	}
+	 
+	$email = "someone@example...com";
+	 
+	try
+	{
+	    // 检测邮箱
+	    if(filter_var($email, FILTER_VALIDATE_EMAIL) === FALSE)
+	    {
+	        // 如果是个不合法的邮箱地址，抛出异常
+	        throw new customException($email);
+	    }
+	}
+	 
+	catch (customException $e)
+	{
+	//display custom message
+	echo $e->errorMessage();
+	}
+?>
+
+<br>
+
+<!-- 多个异常处理函数例子 依然 第一层顶层异常处理例子 -->
+<?php
+	class customException1 extends Exception
+	{
+	    public function errorMessage()
+	    {
+	        // 错误信息
+	        $errorMsg = '错误行号 '.$this->getLine().' in '.$this->getFile()
+	        .': <b>'.$this->getMessage().'</b> 不是一个合法的 E-Mail 地址';
+	        return $errorMsg;
+	    }
+	}
+	 
+	$email = "someone@example..com";
+	 
+	try
+	{
+	    // 检测邮箱
+	    if(filter_var($email, FILTER_VALIDATE_EMAIL) === FALSE)
+	    {
+	        // 如果是个不合法的邮箱地址，抛出异常
+	        throw new customException1($email);
+	    }
+	    // 检测 "example" 是否在邮箱地址中
+	    if(strpos($email, "example") !== FALSE)
+	    {
+	        throw new Exception("$email 是 example 邮箱");
+	    }
+	}
+	catch (customException1 $e)
+	{
+	    echo $e->errorMessage();
+	}
+	catch(Exception $e)
+	{
+	    echo $e->getMessage();
+	}
+	//如果第一个检测邮箱出现异常, 就会跳到 customException1->errorMessage,然后就结束了
+	//所以并不会再继续第二个 检测 "example" 是否在邮箱地址中 的操作!!!
+	//否测会执行第二个
+?>
+
+<br>
+
+<!-- 重新抛出异常例子 多层异常处理例子 -->
+<?php
+	class customException2 extends Exception
+	{
+	    public function errorMessage()
+	    {
+	        // 错误信息
+	        $errorMsg = $this->getMessage().' 不是一个合法的 E-Mail 地址。';
+	        return $errorMsg;
+	    }
+	}
+	 
+	$email = "someone@example.com";
+	 
+	try				//第一层异常的try
+	{
+	    try				//第二层异常的try
+	    {
+	        // 检测 "example" 是否在邮箱地址中
+	        if(strpos($email, "example") !== FALSE)
+	        {
+	            // 如果是个不合法的邮箱地址，抛出异常
+	            throw new Exception($email);
+	        }
+	    }
+	    catch(Exception $e)		//第二层异常的catch
+	    {
+	        // 重新抛出异常
+	        throw new customException2($email);
+	    }
+	}
+	catch (customException2 $e)	//第一层异常的catch
+	{
+	    // 显示自定义信息
+	    echo $e->errorMessage();
+	}
+	//里try 遇到throw 跳到 里catch
+	//里catch里的throw 属于 外try, 所以跳到外catch
+	//最后就执行声明的 customException2 -> errorMessage
+?>
+
+
+
