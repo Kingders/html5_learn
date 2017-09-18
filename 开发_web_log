@@ -1,0 +1,3431 @@
+20170714
+建立个人网站!!!!!!!! 用python
+预备:
+	pc新建项目目录 selfweb 并进入
+建立独立环境:
+	mkvirtualenv selfweb -p python2.7
+	workon selfweb
+安装环境包:
+	pip install django 	//web框架
+	pip install uwsgi	//服务端容器 对django友好
+	小技巧:
+	如果pip install 安装慢 ,可以用豆瓣的镜像!
+	pip install django -i http://pypi.douban.com/simple --trusted-host pypi.douban.com
+建立github仓库:
+	git init			//通过git init命令把当前目录变成Git可以管理的仓库
+	登陆GitHub，然后，在右上角找到“Create a new repo”按钮，创建一个新的仓库
+	在Repository name填入selfweb，其他保持默认设置，点击“Create repository”按钮，就成功地创建了一个新的Git仓库
+	git remote add origin git@github.com:Kingders/selfweb.git 
+		//在本地库learngit作为当前工作目录执行此命令，关联本地与远程仓库（通过ssh协议）
+	git add readme
+	git commit -m "first commit"
+	git push -u origin master		//提交本地仓库到远程库
+	出错: (由于使用新机器,还没有与我的github账号建立ssh连接)
+	/*log start*/
+	(selfweb) infortech-ubuntu-1404@infortechubuntu1404-HP-EliteDesk-880-G2-TWR:~/selfweb$ git commit -m "first_commit"
+	
+	*** Please tell me who you are.
+	
+	Run
+	
+	  git config --global user.email "you@example.com"
+	  git config --global user.name "Your Name"
+	
+	to set your account's default identity.
+	Omit --global to set the identity only in this repository.
+	
+	fatal: unable to auto-detect email address (got 'infortech-ubuntu-1404@infortechubuntu1404-HP-EliteDesk-880-G2-TWR.(none)')
+	(selfweb) infortech-ubuntu-1404@infortechubuntu1404-HP-EliteDesk-880-G2-TWR:~/selfweb$ git push -u origin master
+	The authenticity of host 'github.com (192.30.255.113)' can't be established.
+	RSA key fingerprint is 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48.
+	Are you sure you want to continue connecting (yes/no)? yes
+	Warning: Permanently added 'github.com,192.30.255.113' (RSA) to the list of known hosts.
+	Permission denied (publickey).
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+	(selfweb) infortech-ubuntu-1404@infortechubuntu1404-HP-EliteDesk-880-G2-TWR:~/selfweb$ git push -u origin master
+	Warning: Permanently added the RSA host key for IP address '192.30.255.112' to the list of known hosts.
+	Permission denied (publickey).
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+	/*log end*/
+	解决:建立ssh连接
+	创建SSH Key
+	$ ssh-keygen -t rsa -C "418128064@qq.com"	//ssh key 与机器相连，所以同一email，不同机子的ssh key 不一样
+	Generating public/private rsa key pair.
+	Enter file in which to save the key (/home/kl/.ssh/id_rsa):	//不填,回车直接默认
+	Enter passphrase (empty for no passphrase): //不填,回车直接默认
+	Enter same passphrase again: //不填,回车直接默认
+	Your identification has been saved in /home/kl/ssh.	//可以不填，直接回车
+	Your public key has been saved in /home/kl/ssh.pub.
+	The key fingerprint is:
+	36:1a:e1:5c:9d:13:7b:ce:0c:6f:72:b8:a9:b7:8a:0c 418128064@qq.com
+	The key's randomart image is:
+	+--[ RSA 2048]----+
+	|          .      |
+	|         . +     |
+	|      . . * .    |
+	|     o o   X     |
+	|      + S o B    |
+	|       + . *     |
+	|    E .   o      |
+	|     o . ..      |
+	|      o oo..     |
+	+-----------------+
+	在/home/kl目录下得到ssh文件（私钥），ssh.pub文件（公钥）
+	登陆GitHub，打开“Account settings”，“SSH Keys”页面
+	点“Add SSH Key”，填上任意Title，在Key文本框里粘贴id_rsa.pub文件的全部内容后，点“Add Key”，你就应该看到已经添加的Key	
+	再次git push 出错: 
+	git push -u origin master	//出错,由于没有pc端没有登陆账号!!!
+	登陆账号
+	git config --global user.email "418128064@qq.com"
+	git config --global user.name "kingders"
+	再次git push 成功!! 终于建立好 github仓库!!!
+创建 django 工程
+	django-admin startproject selfweb ~/selfweb
+		自动创建manage.py文件(一个工具脚本，不需要修改)，
+		自动创建工程总目录shareditor
+			包含了配置文件settings.py、
+			总路由配置urls.py、
+			wsgi协议配置文件wsgi.py
+在工程下创建 网站app
+	django-admin startapp web
+		自动创建web目录，并且自动帮我们组织了一些文件，包括：
+			admin.py：数据库表的后台管理类一般定义在这里
+			apps.py：这个app的配置信息，这个文件一般不动
+			migrations目录：存储数据库迁移相关的临时文件，不需要动
+			models.py：和数据库对应的model类一般定义在这里
+			tests.py：自动化脚本
+			views.py：视图层脚本，我一般会把控制逻辑写到这里
+尝试执行:
+	python manage.py runserver	//执行网站服务
+	然后登陆 http://127.0.0.1:8000就可以访问网页了	
+修改得 helloworld 例程(单进程,单线程)
+	修改web/views.py (添加一个显示函数)	
+		# by william 
+		from django.http import HttpResponse
+		
+		def index(request):
+		    return HttpResponse('hi my baby!')
+	修改路由规则:修改selfweb/urls.py
+		# by william
+		from web import views
+		
+		urlpatterns = [
+		    url(r'^admin/', admin.site.urls),
+		    # by william
+		    url(r'^$',views.index)
+		]
+	python manage.py runserver	//执行网站服务 然后登陆 http://127.0.0.1:8000测试
+设置成比较专业的高并发网站:(多进程)
+	建立selfweb/uwsgi.ini:
+		[uwsgi]
+		chdir = /home/infortech-ubuntu-1404/selfweb
+		http = 127.0.0.1:8000
+		http-keepalive = 1
+		module = selfweb.wsgi:application
+		master = ture
+		processes = 5
+		daemonize = /home/infortech-ubuntu-1404/selfweb/logs/uwsgi.log
+		disable-logging = 1
+		buffer-size = 16384
+		harakiri = 5
+		post-buffering = 8192
+		post-buffering-bufsize = 65536
+		pidfile = /home/infortech-ubuntu-1404/selfweb/logs/uwsgi.pid
+		enable-threads = true
+		single-interpreter = true
+	上述是配置了一个web容器
+	logs文件夹还没有,我们mkdir 一个
+	然后执行 启动命令:
+	uwsgi --ini selfweb/uwsgi.ini	//得到如下log:
+	[uWSGI] getting INI configuration from selfweb/uwsgi.ini
+	多进程 网站服务 已经在后台启动了!! 登陆 http://127.0.0.1:8000可测试
+	ps ux|grep uwsgi 可以查看正在工作的进程
+	关闭 uwsgi 启动的网站服务:
+		killall -9 uwsgi
+	扩展:(先不研究)
+	另外为了让我们的网站具有高可用性(高可用就是挂掉一台机器不影响服务)，一台机器启动服务还不行，
+	我们至少要部署两台完全对等的web服务来同时提供服务，
+	那么用户在浏览器里访问时到底访问的是哪个机器呢？这里有两种实现方案，
+	一种是配置DNS记录，同一个域名对应多个ip，那么当一个ip不可用时浏览器会自动尝试另外的ip，
+	还有一种方法就是通过稳定的代理服务器(如nginx、apache httpd等)来配置成一个负载均衡代理，对外暴露的一个ip，对内连接到多台web服务器
+	uwsg.ini 里要用绝对路径我去!!!
+		ps ux | grep uwsgi //查看  uwsgi
+		uwsgi : killall -9 uwsgi	//关闭uwsgi
+	补充1,
+		网站移植到新机子时,需要重新配置 uwsg.ini,里的路径!!!
+	补充2, 	测试nat123 外部映射,  
+		把默认的8000打端口改为80端口!! selfweb/uwsgi.ini: -> http = 127.0.0.1:80
+		使用80端口需要权限:所以启动服务时:sudo python manage.py runserver 80
+		5798346c.nat123.net 是 80端口 映射, 内网/外网端口均为 80
+		登录nat123映射的域名出错: 表示 5798346c.nat123.net 不在 ALLOW_HOSTS 表里,
+		selfweb/settings.py -> ALLOWED_HOSTS = ['5708346c.nat123.net']
+		重新 sudo python manage.py runserver 80 -> 远程机登录 5798346c.nat123.net 成功
+		若使用uwsgi 布置服务器:
+				把django默认的8000打端口改为80端口!! selfweb/uwsgi.ini: -> http = 127.0.0.1:80
+				使用80端口需要权限 sudo uwsgi --ini selfweb/uwsgi.ini
+				远程机登录 5798346c.nat123.net 成功			
+添加数据库 mysql:
+	数据库,是django网站各种扩展模块的基础,所以,建站之前先要初始化一个数据库
+	当migrate过程时,django会给 selfweb/settings.py->INSTALLED_APPS 里提到的模块都建立相应的表单,
+	先登陆数据库命令行处理界面
+	mysql -u root -p	//以数据库root 登陆 后续提示填写root密码:3***************7
+		create database db_selfweb;	//每条命令要加";",这里建立一个数据库
+	退出登陆数据库: ctrl+c
+	配置工程连接这个数据库: 修改 selfweb/settings.py
+		DATABASES = {
+		    'default': {
+		        # 'ENGINE': 'django.db.backends.sqlite3',
+		        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+			# by william
+		        'ENGINE': 'django.db.backends.mysql',
+		        'NAME': 'db_selfweb',
+		        'USER': 'root',
+		        'PASSWORD': '3***************7',
+		        'HOST': '127.0.0.1',
+		        'PORT': '3306',			//mysql默认的监听口,命令可查: ps -an | grep 3306
+		        'OPTIONS': {
+		            'sql_mode': 'traditional',
+		        }
+		    }
+		}
+	检查配置是否出错: python manage.py check
+	出错: 没有加 python2 的 mysql 接口 Mysqldb
+	解决: pip install MYSQL-python
+	再检查:python manage.py check	//没出错 !!  System check identified no issues (0 silenced).
+	补充: 
+		db_selfweb 并不存在与 selweb网站目录里!!,拷贝移植selfweb网站到新机子时,并不带 db_selfweb
+		关于如何把 db_selfweb也拷贝过去,日后在探究
+创建web模块,及建立自定义model模型
+	model即定义了 一条数据含有的 内容项,遵从这个model的每条数据都是 这个model的实例,多个实例最终集中成一个数据表格
+	我们在代码里操作model的实例其实就是在操作数据库
+	修改 web/models.py
+		# by william
+		class BlogPost(models.Model):
+		    title = models.CharField(max_length=255,verbose_name='文章标题')
+		    body = models.TextField(verbose_name='文章内容')
+		    create_time = models.DateTimeField(verbose_name='创建时间')
+	其实就是定义了一个BlogPost的model了,接下来的事情,就是把我们定义的model转换成一个真正的mysql model,建立真正的BlogPost数据表
+	修改 selfweb/settings.py
+		INSTALLED_APPS = [
+		    'django.contrib.admin',	//表示 添加 django管理模块 admin
+		    'django.contrib.auth',	//表示 添加 django管理模块 admin
+		    'django.contrib.contenttypes',
+		    'django.contrib.sessions',
+		    'django.contrib.messages',
+		    'django.contrib.staticfiles',
+		    # by william
+		    'web',	//添加我们创建的web到默认安装的app里
+		]
+	python manage.py makemigrations		//更新migrate配置
+	python manage.py migrate		//根据配置建立数据库表单!!
+	然后登陆数据库看看:
+		use db_selfweb;		//转到db_selfweb
+		show tables;		//显示建立了的数据表单
+		+----------------------------+
+		| Tables_in_db_selfweb       |
+		+----------------------------+
+		| auth_group                 |
+		| auth_group_permissions     |
+		| auth_permission            |
+		| auth_user                  |
+		| auth_user_groups           |
+		| auth_user_user_permissions |
+		| django_admin_log           |
+		| django_content_type        |
+		| django_migrations          |
+		| django_session             |
+		| web_blogpost               |
+		+----------------------------+
+		11 rows in set (0.00 sec)
+		看到了 web_blogpost 就是我们定义的model 对应的 mysql 数据库表单
+		而其他的是 django默认的建立的表单
+数据库表 所谓的 一对多关系:(通过model 的联系理解)
+	补充修改 web/models.py
+		# by william
+		class Subject(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='类别名称')
+		    introduce = models.CharField(max_length=255,verbose_name='类别简介')
+		    image = models.ImageField(verbose_name='类别图片')
+		
+		class BlogPost(models.Model):
+		    title = models.CharField(max_length=255,verbose_name='文章标题')
+		    body = models.TextField(verbose_name='文章内容')
+		    create_time = models.DateTimeField(verbose_name='创建时间')
+		    subject = models.ForeignKey(Subject,verbose_name='类别',null=True)
+	python manage.py makemigrations		//更新migrate配置 这时出错,提示缺 pillow ,pip install 就好
+	python manage.py migrate		//根据配置建立数据库表单!!
+	然后登陆数据库看看:
+		mysql -u root -p	//键入密码3***************7
+			use db_selfweb;
+			show tables;
+		除了web_blogpost 还有一个web_subject,
+		而且 web_blogpost 里也多了一项 subject_id 的内容项,即照应blogpost 这个model 多了一个内容项
+数据库表 所谓的 多对多关系:(通过model 的联系理解)
+	给每篇blogpost 都添加标签
+	在这里,标签是比类别还要特殊,这里例子的局限性认为,每篇文章只能被归类到一个类别里,但可以被贴上多个标签
+	那么是问题来了,是不是要 给 blogpost 这个model 添加几个内容项?来存被贴上的多个标签?
+	但是如果有些文章只被贴一个标签的话,多余的没用标签内容项让model看起来比较臃肿
+	所以观察以下改变:
+	补充修改 web/models.py
+		# by william
+		class Tag(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='标签名称')
+		
+		class Subject(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='类别名称')
+		    introduce = models.CharField(max_length=255,verbose_name='类别简介')
+		    image = models.ImageField(verbose_name='类别图片')
+		
+		class BlogPost(models.Model):
+		    title = models.CharField(max_length=255,verbose_name='文章标题')
+		    body = models.TextField(verbose_name='文章内容')
+		    create_time = models.DateTimeField(verbose_name='创建时间')
+		    subject = models.ForeignKey(Subject,verbose_name='类别',null=True)
+		    tags = models.ManyToManyField(Tag,verbose_name='标签')
+	python manage.py makemigrations		//更新migrate配置 
+	python manage.py migrate		//根据配置建立数据库表单!!	
+	然后登陆数据库看看:
+		再多了一个web_tag, 和 web_blogpost_tags 数据表
+		但是 web_blogpost 里并没有多了一项 关于tag 的内容项,即照应blogpost 这个model 的结构 并没有变化
+		替代地 多出了一张 web_blogpost_tags 的新表 来记录 blogpost的每条数据实例与 tag 每条数据实例的关系
+关于pycharm 这个IDE:
+	先不管!!
+强大的后台管理工具 django-admin (例子:在django-admin管理后台管理BlogPost、Subject、Tag这三个表)
+	要使用admin管理模块: 需要: selfweb/settings.py -> INSTALLED_APPS 含有:
+		'django.contrib.admin',	//表示 添加 django管理模块 admin
+		'django.contrib.auth',	//表示 添加 django管理模块 admin
+	还需要:selfweb/urls.py -> urlpatterns 含有 url(r'^admin/', admin.site.urls)
+	python manage.py createsuperuser	//创建管理者 
+	登陆http://127.0.0.1:8000/admin页面,可以进行相关管理
+	修改web/admin.py:
+	# by william
+		from .models import BlogPost
+		from .models import Subject
+		from .models import Tag
+		
+		class BlogPostAdmin(admin.ModelAdmin):
+		    list_display = ('title', 'create_time', 'subject', 'tags')
+		
+		class SubjectAdmin(admin.ModelAdmin):
+		    list_display = ('name')
+		
+		class TagAdmin(admin.ModelAdmin):
+		    list_display = ('name')
+		
+		admin.site.register(Tag,TagAdmin)
+		admin.site.register(Subject,SubjectAdmin)
+		admin.site.register(BlogPost,BlogPostAdmin)
+	检查 python manage.py check //出现以下错误未解决
+		SystemCheckError: System check identified some issues:
+		
+		ERRORS:
+		<class 'web.admin.BlogPostAdmin'>: (admin.E109) The value of 'list_display[3]' must not be a ManyToManyField.
+		<class 'web.admin.SubjectAdmin'>: (admin.E107) The value of 'list_display' must be a list or tuple.
+		<class 'web.admin.TagAdmin'>: (admin.E107) The value of 'list_display' must be a list or tuple.
+		
+		System check identified 3 issues (0 silenced).
+	上述错误未解决,但是不影响 http://127.0.0.1:8000/admin 出现 BlogPost、Subject、Tag 的选单
+	按道理现在就可以点入,并添加 给这些数据库表单 添加一条条数据信息!!
+	但是出错:
+		勉强可以写入 BlogPost 的数据消息条,
+		但是 Subject 和 Tag 连进去都失败,不行!!!
+		直接错误为:
+		AttributeError at /admin/web/subject/
+		Unable to lookup 'n' on Subject or SubjectAdmin	
+	问题解决:
+	由于web/admin.py的书写格式错误,导致以上显示问题,实际上add 的数据消息条都成功建立:只是显示出问题:
+	重写web/admin.py为:
+		# -*- coding: utf-8 -*-
+		from __future__ import unicode_literals
+		
+		from django.contrib import admin
+		
+		# Register your models here.
+		
+		# by william
+		from .models import BlogPost
+		from .models import Subject
+		from .models import Tag
+		
+		class BlogPostAdmin(admin.ModelAdmin):
+		    list_display = ('title', 'create_time', 'subject', 'tags')
+		admin.site.register(BlogPost,BlogPostAdmin)
+		
+		class SubjectAdmin(admin.ModelAdmin):
+		    list_display = ('name',)
+		admin.site.register(Subject,SubjectAdmin)
+		
+		class TagAdmin(admin.ModelAdmin):
+		    list_display = ('name',)
+		admin.site.register(Tag,TagAdmin)
+	重启网站服务器成功
+	补充:	
+		网站移植到新机子时,(譬如这次公司机子做好的,移植到kingders上)出现的问题:
+		python manage.py check
+			SystemCheckError: System check identified some issues:
+			ERRORS:
+			<class 'web.admin.BlogPostAdmin'>: (admin.E109) The value of 'list_display[3]' must not be a ManyToManyField.
+		这中情况下,自然 python manage.py runserver 也不会成功
+		原因居然是: web/admin.py 上的 list_display = ('title', 'create_time', 'subject', 'tags')出问题,
+		改为 list_display = ('title', 'create_time', 'subject', ) 即,参数过多的原因么?反正改后就正常了
+		还有,由于忘了 管理者账号,需要重新建一个.python manage.py createsuperuser ,
+		kingders 上建了个 账号:admin 密码:williamishandsome
+管理界面的定制化
+	页面顶部写的“Django administrator”换成“selfweb管理后台”，
+		管理页面总标题因为是django-admin自身的内容，因此做定制有些复杂些，
+		在根目录下创建如下目录templates/admin，
+			mkdir templates
+			mkdir templates/admin
+		在里面新建base_site.html文件:(要注意全部用英文字符符号,否则出错)
+			touch templates/admin/base_site.html
+			内容如下:
+			{% extends "admin/base.html"%}		//模块继承,这个内容后续分析
+			{% load i18n %}
+			
+			{% block title %}
+			{{ title }} | {% trans "selfweb后台管理" %}
+			{% endblock %}
+			
+			{% block branding %}
+			<hi id="site_name">{% trans 'selfweb后台管理' %}</hi>
+			{% endblock %}
+			
+			{% block nav-global %}
+			{% endblock %}			
+	管理首页里的“WEB”改成“网站”，“Blog posts”改成“文章”，“Tag”改成“标签”，
+		修改web/models.py:
+		# by william
+		class Tag(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='标签名称')
+		    class Meta:		//这时model 的嵌套类 的内容,后续分析
+		        verbose_name_plural = '标签'
+		    def __unicode__(self):
+		        return self.name
+		
+		class Subject(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='类别名称')
+		    introduce = models.CharField(max_length=255,verbose_name='类别简介')
+		    image = models.ImageField(verbose_name='类别图片')
+		    class Meta:
+		        verbose_name_plural = '类别'
+		    def _unicode_(self):
+		        return self.name
+		
+		class BlogPost(models.Model):
+		    title = models.CharField(max_length=255,verbose_name='文章标题')
+		    body = models.TextField(verbose_name='文章内容')
+		    create_time = models.DateTimeField(verbose_name='创建时间')
+		    subject = models.ForeignKey(Subject,verbose_name='类别',null=True)
+		    tags = models.ManyToManyField(Tag,verbose_name='标签')
+		    class Meta:
+		        verbose_name_plural = '文章'
+		    def _unicode_(self):
+		        return self.name
+		这里的verbose_name_plural就是在这个结构在管理页面里的展示名称，
+		__unicode__就是这个结构里每一个对象的展示形式，直接看一下你的管理页面的效果就知道了	
+	启动 template 功能:
+		修改shareditor/settings.py，在TEMPLATES  =>  DIRS配置项中添加'templates'，
+			TEMPLATES = [
+			    {
+			        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+			        'DIRS': [
+			            'templates',
+			        ],
+			        'APP_DIRS': True,
+			        'OPTIONS': {
+			            'context_processors': [
+			                'django.template.context_processors.debug',
+			                'django.template.context_processors.request',
+			                'django.contrib.auth.context_processors.auth',
+			                'django.contrib.messages.context_processors.messages',
+			            ],
+			        },
+			    },
+			]		
+	另外我们在新建BlogPost的时候，
+		类别和标签这两项里写的是“Subject object”和"Tag object"，都不知道具体信息，
+		(未解决)
+图片管理(要申请阿里云,整段未验证)
+	我们在新建一个类别的时候要为image字段选择一张图片，
+	我们看到图片实际上上传到了根目录下。这种方式存在一些问题：
+		1）如果要在网站中展示这张图片需要为其单独指定路由；
+		2）如果网站多机部署无法实时同步数据；
+		3）如果图片很大，会耗费很多带宽，响应慢
+
+	为了解决如上问题，我们引入阿里云的对象存储OSS服务(收费,但不贵,)，
+	它的优点是有CDN加速，也就是不同地域都有镜像，访问快，而且价格低廉，可比同样的网络带宽便宜多了
+	OSS的使用请见官方文档，我这里直接贴代码，懂的可以参考，不懂的可以直接用
+	首先要在阿里云的OSS中创建一个Bucket，如selfweb-selfweb，读写权限一定要选择“公共读”
+	其次要安装oss2库，执行：
+	pip install oss2
+	然后在我们代码的根目录创建commons目录(用于放置所有公共组件)，
+	并在其中创建一个空的__init__.py(作为lib的目录都要有这个文件，否则无法import)，
+	并创建ossutils.py文件，内容如下
+		# -*- coding: utf-8 -*-
+		import oss2
+		import time
+		
+		AccessKeyId = '我的accesskey'
+		AccessKeySecret = '我的accesskey密码'
+		Endpoint = 'oss-cn-beijing.aliyuncs.com'
+		InternalEndpoint = 'oss-cn-beijing-internal.aliyuncs.com' 
+		
+		def upload_oss(bucket_name, file_name, bytes_content):
+		    """
+		    :param bucket_suffix: 区分测试环境和线上环境
+		    :param file_name: 会自动添加时钟戳
+		    :param bytes_content: 二进制的文件内容
+		    :returm: 外网可以访问的url
+		    """
+		    auth = oss2.Auth(AccessKeyId,AccessKeySecret)
+		    buck = oss2.bucket(auth, Endpoint, bucket_name)
+		    file_path = 'dynamic/' + str(int(time.time())) + '_' + file_name
+		    result = bucket.put_object(file_path, bytes_content)
+		    if result.status == 200:
+		        return 'http://' + bucket_name + '.oss-cn-beijing.aliyuncs.com' + file_path
+		    else:
+		        return None
+	重载Subject的image的上传逻辑，修改web/admin.py，引入ossuitls：
+		from commons.ossutils import upload_oss
+	声明BucketName变量下面会用到：
+		BucketName = 'selfweb_selfweb'
+	修改SubjectAdmin类，添加如下方法：
+		def save_model(self, request, obj, form, change):
+		    if 'image' in request.FILES:
+		        image_name = request.FILES['image'].name
+		        image_content = request.FILES['image'].read()
+		
+		        url = upload_oss(BucketName, image_name, image_content)
+		        if url:
+		            obj.image = url
+		
+		    super(SubjectAdmin, self).save_model(request, obj, form, change)
+	这时我们重新修改一个类目，重新上传图片，我们发现图片已经不再保存到本地文件了，
+	而在阿里云的OSS里找到了上传的文件，而在我们的数据库里存储了这个图片在阿里云OSS中的url，可以直接访问
+
+/////////至此 后台基本准备就绪，真正的前台网站开始出场了//////////
+
+template 模板渲染
+	模板属于mvc中的view这一层，是用来为网页布局的，
+	乍一看来就是个html页面，但是里面会嵌入模板引擎提供给我们的特殊语法。
+	模板引擎有很多，不同语言或框架都会实现自己一套，
+	还有一些通用的模板引擎，但是他们语法和功能都比较类似，
+	无非就是模板继承、模板引入、读透传的变量、循环、逻辑判断、filters、自定义标签等。
+	我们这里直接用django原生的django-template就足够了。
+	上述 管理者页讨论的的时候 就初步涉及模板构建的内容了: 这里先整理以下 如何打开 template 模板功能:
+		修改shareditor/settings.py，在TEMPLATES  =>  DIRS配置项中添加'templates'，
+		然后执行后面的操作:
+	创建web/templates/web/index.html，内容如下：
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+		    <meta charset="UTF-8">
+		    <title>Title</title>
+		</head>
+		<body>
+		<h1>Hello {{ name }}</h1>
+		</body>
+		</html>
+	修改web/views.py中的index函数如下：
+		def index(request):
+		    return render(request, 'web/index.html', {'name': 'william_huang'})
+	注意:同时 selfweb/urls.py 需要这样:
+		from web import views
+		urlpatterns = [
+		    ...
+		    url(r'^$',views.index),
+	
+	打开网页 http://127.0.0.1:8000/ 我们看到了一个大大的Hello william_huang (注意,8000后没有任何参数,配合url 的 ^$ 参数)
+	这里的{{}}就是变量透传的语法，直接获取到python传进去的变量。
+	另外这个模板文件的路径用的是web/index.html而不是直接index.html，
+	原因是django里多个app如果用相同的模板文件名，在python代码里指定模板名时它分辨不出是哪个，
+	所以一般把app的名字作为模板文件的目录
+模板继承
+	上述演示模板使用例子, 下面是讨论 模板使用的扩展内容
+	我们网站的所有页面都有一个共同的布局，那就是顶部是logo，底部是版权声明，
+	所以这个框架可以抽象出来一个基类模板，而所有页面模板都继承自这一模板，
+	下面我们创建这个基类模板web/templates/web/base.html，内容如下：
+		<!DOCTYPE html>
+		<html lang="zh-CN">
+		<head>
+		    <meta charset="UTF-8">
+		    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+		    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+		    <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+		    <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		
+		    <title>{% block title %}selfweb - wiliam个人网站{% endblock title %}</title>
+		    {% block head %}
+		    {% endblock head %}
+		</head>
+		<body>
+		
+		<div class="row bg-primary" style="margin-right: 0">
+		    <div class="col-sm-1 col-xs-1"></div>
+		    <div class="col-sm-2 col-xs-11">
+		        <h1><a href="" style="text-decoration: none;color: white;">william_selfweb</a></h1>
+		    </div>
+		    <div class="col-sm-6"></div>
+		</div>
+		
+		{% block body %}
+		{% endblock body %}
+		
+		<div class="row" style="margin-right: 0">
+		    <div class="col-sm-2"></div>
+		    <div class="col-sm-8 col-xs-12 text-center" style="color: #959595;margin-bottom: 10px;">
+		        Copyright © <a href="">selfweb.com</a> | 京ICP备xxxxxxx号 | ccxxccxxcc@gmail.com
+		    </div>
+		</div>
+		
+		</body>
+		</html>
+	这里面有一些叫做block的代码块，它的作用是声明可重写的部分，下面你就会看到这个代码块是怎么在子模板中使用的。
+	我们重写web/templates/web/index.html：为
+		{% extends "web/base.html" %}
+
+		{% block title %}
+		{% endblock %}
+
+		{% block body %}
+		{% endblock %}
+	这里我们只是做了继承，并没有重写,所以显示只看到了<body>的
+	<div class="row bg-primary" style="margin-right: 0">
+	<div class="row" style="margin-right: 0"> 
+	这两部分,即顶部是logo，底部是版权声明
+	我们重写web/templates/web/index.html：为
+		{% extends "web/base.html" %}
+		
+		{% block title %}
+		{% endblock %}
+		
+		{% block body %}
+		    <div class="row jumbotron" style="margin-right: 0">
+		        <div class="col-md-1 col-xs-1"></div>
+		        <div class="col-md-10 col-xs-10"><h1>Welcome Big Data ITors!</h1></div>
+		        <div class="col-md-1 col-xs-1"></div>
+		    </div>
+		{% endblock %}
+	这时不但继承了,还重写添加了 body 内容
+动态数据展示
+	从数据获取tag数据，并展示到首页里。修改web/views.py的index函数，把tag数据取出来并传到模板中，如下：
+		from .models import Tag	
+		def index(request):
+		    tags = Tag.objects.all()
+		    return render(request, 'web/index.html', {'tags': tags})
+	重写web/templates/web/index.html：
+	{% extends "web/base.html" %}
+	
+	{% block title %}
+	{% endblock %}
+	
+	{% block body %}
+	
+	    <div class="row jumbotron" style="margin-right: 0">
+	        <div class="col-md-1 col-xs-1"></div>
+	        <div class="col-md-10 col-xs-10"><h1>Welcome Big Data ITors!</h1></div>
+	        <div class="col-md-1 col-xs-1"></div>
+	    </div>
+	
+	    <div class="row" style="margin-right: 0">
+	        <div class="col-sm-1 col-xs-1"></div>
+	        {% for tag in tags %}
+	            <div class="col-sm-2 col-xs-12">
+	                <div class="thumbnail">
+	                    <img src="{{ tag.image }}" alt="tag">
+	                    <div class="caption">
+	                        <h3>{{ tag }}({{ tag.blogpost_set.count }})</h3>  //注意这行程序的这样写法,还没有建立路由关系
+	                        <p>
+	                            {% for blogpost in tag.blogpost_set.all %}
+	                                {{ blogpost.title }}
+	                            {% endfor %}
+	                        </p>
+	                        <h5>更多>>></h5>
+	                    </div>
+	                </div>
+	            </div>
+	        {% endfor %}
+	        <div class="col-sm-1 col-xs-1"></div>
+	    </div>
+	
+	{% endblock %}
+	
+重启网站服务器:
+		killall -9 uwsgi
+		uwsgi --ini selfweb/uwsgi.ini
+	登陆:http://127.0.0.1:8000 
+	可以看到便签和指定文章!!
+	显示更多内容需要去发掘，比如说为Tag添加image属性
+展示最新文章
+	为了用户能找到最新的文章，所以在所有页面的底部显示最新发表的文章，这需要修改基类模板了，
+	首先在views.py中透传latest_blog_posts变量，如下：
+		from .models import Tag
+		from .models import BlogPost
+		def index(request):
+		    tags = Tag.objects.all()
+		    latest_blog_posts = BlogPost.objects.order_by('create_time')[0:5]
+		    return render(request, 'web/index.html', {'tags': tags, 'latest_blog_posts': latest_blog_posts})
+	修改web/templates/web/base.html，在<body></body>中倒数第二位置处添加如下代码：
+	<div class="row navbar navbar-inverse" style="margin:0">
+	    <div class="row" style="margin:0">
+	        <div class="col-sm-1 col-xs-1"></div>
+	        <div class="col-sm-5 col-xs-5">
+	            <h4 style="color: #FFFFFF; border-bottom: 1px solid #695d69; padding-bottom: 10px; margin-top: 30px;">最新文章</h4>
+	            {% for blogpost in latest_blog_posts %}
+	                <div class="row" style="margin: 10px; margin-left: 0; overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+	                    <span style="color: #959595;">({{ blogpost.create_time|date:"Y-m-d" }})</span>
+	                    <a title="{{ blogpost }}" style="color: #959595;">{{ blogpost.title }}</a>		/*显示标题设置*/
+	                </div>
+	            {% endfor %}
+	        </div>
+	        <div class="col-sm-1 col-xs-1"></div>
+	    </div>
+	</div>
+	重启网站服务器:
+	可以底下新文章的通知,显示了时间和文章标题二次登陆则因为检测到2次进入,所以就不再显示新文章通知
+建立路由:
+	目前为止,首页显示的文章内容,很多都没有建立链接到指定的页面上,接下来做这方面的工作!!
+指定标签的文章列表页路由
+	上一节完成的首页部分每个标签有对应的一块展示区域，
+	希望点击标题可以进入到这个标签的文章列表页。
+	定义如下路由规则，修改selfweb/urls.py，为urlpatterns增加如下一行：
+		url(r'^bloglistbytag', views.blog_list_by_tag, name='blog_list_by_tag'),	//数组成员里加","是一个好习惯
+	意思是说对于url路径为bloglistbytag的网页，直接调用views.blog_list_by_tag来执行逻辑。
+	其中的name是用来在模板中利用“url”模板语法使用的，马上会看到
+	在web/views.py中添加如下函数：
+		def blog_list_by_tag(request):
+		    if 'tagname' in request.GET:
+		        tag_name = request.GET['tagname']
+		        blog_posts = BlogPost.objects.filter(tags__name=tag_name)
+		        latest_blog_posts = BlogPost.objects.order_by('create_time')[0:5]
+		        return render(request, 'web/blog_list_by_tag.html', {'tag_name': tag_name, 'blog_posts': blog_posts,
+		                                                             'latest_blog_posts': latest_blog_posts})
+		    else:
+		        return HttpResponse('404')
+	这里首先通过获取GET请求的tagname参数来获取到标签名，然后通过model层查询数据库获取导数据，
+	并通过web/templates/web/blog_list_by_tag.html这个模板来渲染的，这个模板如下样子：
+		{% extends "web/base.html" %}
+		
+		{% block title %}
+		    {{ tag_name }}
+		{% endblock %}
+		
+		{% block body %}
+		
+		    <div class="row" style="margin-right: 0">
+		        <div class="col-sm-3 col-xs-1"></div>
+		        <div class="col-sm-6 col-xs-10">
+		            <h1>{{ tag_name }}</h1>
+		        </div>
+		        <div class="col-sm-3 col-xs-1"></div>
+		    </div>
+		
+		    <div class="row" style="margin-right: 0">
+		        <div class="col-sm-3 col-xs-1"></div>
+		        <div class="col-sm-6 col-xs-10">
+		            {% for blog_post in blog_posts %}
+		                <h4><a href="">{{ blog_post.title }}</a>({{ blog_post.create_time|date:'Y-m-d' }})</h4>
+		            {% endfor %}
+		        </div>
+		    </div>
+		
+		{% endblock %}
+	重启网站服务器:
+	http://127.0.0.1:8000/bloglistbytag?tagname=hh  //打开标签为hh的文章列表页面
+	由此看路由已经建立好!!
+	通过首页链接进到这个列表页,我们修改web/templates/web/index.html:
+		<h3>{{ tag }}({{ tag.blogpost_set.count }})</h3>
+	改成:
+		<h3><a href="{% url 'blog_list_by_tag' %}?tagname={{ tag }}">{{ tag }}({{ tag.blogpost_set.count }})</a></h3>
+	由此可见,当路由建立好后 <a href=""></a> 是添加连接路径的 !!!
+	由于html 是经过浏览器实时解释渲染的,所以随意修改html 不用重启网站服务器就可以测试!!
+文章详情页的路由:
+	添加web/templates/web/blog_show.html:
+		{% extends "web/base.html" %}
+		
+		{% block title %}
+		    {{ blog_post }} - SharEDITor - 关注大数据技术
+		{% endblock %}
+		
+		{% block body %}
+		
+		    <div class="row">
+		        <div class="col-sm-2 col-xs-1"></div>
+		        <div class="col-sm-6 col-xs-10">
+		            <div class="row">
+		                <div class="col-sm-12 col-xs-12">
+		                    <div class="row">
+		                        <h1>{{ blogpost.title }}</h1>
+		                    </div>
+		                    <div class="row">
+		                        <a class="btn btn-info btn-xs">{{ blog_post.subject.name }}</a>
+		                        {% for tag in blog_post.tags.all %}
+		                            <a class="btn btn-warning btn-xs" href="{% url 'blog_list_by_tag' %}?tagname={{ tag }}">
+		                                {{ tag.name }}
+		                            </a>
+		                        {% endfor %}
+		                        <small>发表于 {{ blog_post.create_time|date:"Y-m-d H:i:s" }}</small>
+		                        <small>阅读{{ blog_post.pv }}次</small>
+		                    </div>
+		
+		                    <div class="row">
+		                        <hr/>
+		                    </div>
+		
+		                    <div class="row">
+		                        <div class="row">
+		                            <div class="col-sm-12 col-xs-12">
+		                                <img style="width: 100%; height: 100%;" src="{{ blog_post.image }}">
+		                            </div>
+		                        </div>
+		                        {{ blog_post.abstract }}
+		                        <br />
+		                        {{ blog_post.body }}
+		                    </div>
+		                </div>
+		            </div>
+		            <div class="row">
+		                <div class="col-sm-6 col-xs-6">
+		                    <span style="color:#aaaaaa;">前一篇:</span>
+		                    {% if prev_blog_post.first != null %}
+		                        <a href="">{{ prev_blog_post.first }}</a>
+		                    {% endif %}
+		                </div>
+		                <div class="text-right col-sm-6 col-xs-6">
+		                    <span style="color:#aaaaaa;">后一篇:</span>
+		                    {% if next_blog_post.first != null %}
+		                        <a href="">{{ next_blog_post.first }}</a>
+		                    {% endif %}
+		                </div>
+		            </div>
+		
+		            <!--PC和WAP自适应版-->
+		            <div id="SOHUCS" sid="{{ blog_post.id }}" ></div>
+		            <script type="text/javascript">
+		             (function(){
+		                    var appid = 'cysV8S2ux';
+		                    var conf = 'prod_bd659405e413a4b27a3568e27185b632';
+		                    var width = window.innerWidth || document.documentElement.clientWidth;
+		                    if (width < 960) {
+		                        window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="http://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>'); } else { var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("http://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})}); } })();
+		            </script>
+		        </div>
+		
+		        <div class="col-sm-2 hidden-xs">
+		            <br/>
+		            <div class="row">
+		                <div class="col-sm-8">
+		                    <h4>官方微信公众号</h4>
+		                    <a href="http://shareditor-shareditor.oss-cn-beijing.aliyuncs.com/dynamic/weixinpub.jpg">
+		                        <img width="90%" height="90%" src="http://shareditor-shareditor.oss-cn-beijing.aliyuncs.com/dynamic/weixinpub.jpg">
+		                    </a>
+		                </div>
+		                <div class="col-sm-1">
+		                    <div class="row">
+		                        <a href="https://github.com/warmheartli">
+		                            <div class="fa fa-github fa-3x" style="margin-top: 20px;"></div>
+		                        </a>
+		                    </div>
+		                    <div class="row">
+		                        <a href="http://weibo.com/chuangwanglaile">
+		                            <div class="fa fa-weibo fa-3x" style="margin-top: 20px;"></div>
+		                        </a>
+		                    </div>
+		                </div>
+		            </div>
+		            <hr/>
+		            <h4>
+		                {% for tag in blog_post.tags.all %}
+		                    系列:{{ tag.name }}
+		                {% endfor %}
+		            </h4>
+		            <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+		                {% for tag_blog_post in tag_blog_posts %}
+		                    {% if tag_blog_post.id == blog_post.id %}
+		                        <h6 style="color: red;">{{ tag_blog_post }}</h6>
+		                    {% else %}
+		                        <h6><a href="{% url 'blog_show' %}?blogId={{ tag_blog_post.id }}">{{ tag_blog_post }}</a></h6>
+		                    {% endif %}
+		                {% endfor %}
+		            </div>
+		            <h4>全部系列</h4>
+		            {% for tag in tags %}
+		                <h6><a href="{% url 'blog_list_by_tag' %}?tagname={{ tag.name }}">{{ tag.name }}</a></h6>
+		            {% endfor %}
+		        </div>
+		    </div>
+		
+		{% endblock %}
+	在selfweb/urls.py，为urlpatterns增加如下一行：
+		    url(r'^blogshow', views.blog_show, name='blog_show'),
+	在web/views.py中添加如下函数：
+	def blog_show(request):
+	    if 'blogId' in request.GET:
+	        blog_id = request.GET['blogId']
+	        blog_post = BlogPost.objects.get(id=blog_id)
+	        latest_blog_posts = BlogPost.objects.order_by('create_time')[0:5]
+	        tag_blog_posts = BlogPost.objects.filter(tags__name=blog_post.tags.first())
+	        tags = Tag.objects.all()
+	        prev_blog_post = BlogPost.objects.filter(tags__name=blog_post.tags.first()).filter(id__gt=blog_post.id).order_by('id')[0:1]
+	        next_blog_post = BlogPost.objects.filter(tags__name=blog_post.tags.first()).filter(id__gt=blog_post.id).order_by('id').reverse()[0:1]
+	        return render(request, 'web/blog_show.html', {'blog_post': blog_post, 'latest_blog_posts': latest_blog_posts,
+	                                                      'tag_blog_posts': tag_blog_posts, 'tags': tags,
+	                                                      'prev_blog_post': prev_blog_post, 'next_blog_post': next_blog_post})
+	    else:
+	        return HttpResponse('404')
+	添加 <a href=""></a> 链接:
+		web/templates/web/index.html:
+                        <p>
+                            {% for blogpost in tag.blogpost_set.all %}
+                                {{ blogpost.title }}
+                            {% endfor %}
+                        </p>
+		改成:
+			<p>
+			    {% for blog_post in tag.blogpost_set.all %}
+			        <a href="{% url 'blog_show' %}?blogId={{ blog_post.id }}">
+			            {{ blog_post.title }}
+			        </a>
+			    {% endfor %}
+			</p>
+		web/templates/web/blog_list_by_tag.html:
+	                <h4><a href="">{{ blog_post.title }}</a>({{ blog_post.create_time|date:'Y-m-d' }})</h4>
+		改成:
+			<h4><a href="{% url 'blog_show' %}?blogId={{ blog_post.id }}">
+			       {{ blog_post.title }}
+			    </a>
+			    ({{ blog_post.create_time|date:'Y-m-d' }})
+			</h4>
+	重启网站服务器测试!! 
+	成功!!!
+	通过,blog_show.html 可以看到典型的网站设计规则
+djanggo:相关内容
+	符合 MVC 原则的框架: 模型 视图 控制, 但上述哪个建站过程,还不知怎么看出这个原则
+	model学习:
+		manytomanyfield 概念
+		foreignkey 概念
+		模型层次例子:
+			from django.db import models		//引用 models类
+			class Author(models.Model):
+			    name = models.CharField(max_length=100)
+			class Book(models.Model)
+			    title = models.CharField(max_length=100)
+			    genre = models.CharField(max_length=100)
+			    num_pages = models.IntegerField()
+			    authors = models.ManyToManyField(Author)	//book 与 author 关系
+			    def _unicode_(self):	//什么作用 ???
+			        return self.title
+			    class Meta:			//镶嵌类,用于添加各种django属性功能
+			        abstract =True		//表示这是个抽象类
+			class SmithBook(Book):		//继承 book model 的smithbook model
+			    authors = models.ManyToManyField(Author,limit_choices_to=(
+			        'name_endswith': 'Smith'
+			    ))				//表示 smithbook 这个model 的author量为指定固定值'smith'	
+			//migrate 时, django 只创建 author 与 smithBook 两个表单,而smithbook继承book内容,
+			//没有生成book表单,是因为 book是虚拟的
+			//如果 book 没有class Meta -> abstract=True 这项时, 就会创建 author book,smithbook 三个表单,
+			//而smithbook依然是继承book内容的 model
+		理解 class Meta 的例子:
+			class Person(models.Model):
+			    first = models.CharField(max_length=100)
+			    last = models.CharField(max_length=100)
+			    middle = models.CharField(max_length=100)
+			    class Meta:
+			        ordering = {'first','middle','last'}	//表示显示,按 first middle last 次序显示
+			        unique_together = {'first','middle','last'} //表示多个相同内容的对象成员,就不要重复显示出来了
+				verbose_name_plural = "people"	//这里的verbose_name_plural就是在这个结构在管理页面里的展示名称 
+			//但是最后 关于 ordering 如何配合 html 使用,还未知道!!!先不管!!
+	url,路由,链接,显示的学习:
+		关于selfweb/urls.py 的路径定义 url(),第一个参数是路径正则表达式
+			r'^$'	//表示网站根地址: 如 http://127.0.0.1:8000/ ,^指网站根目录,即8000后的那个/, $表示匹配到此结束
+			r'^bloglistbytag'	//都表示匹配 网站根目录+bloglistbytag $表示是匹配结束的地方,但这里可加可不加
+			或者r'^bloglistbytag$'	//例如: http://127.0.0.1:8000/bloglistbytag?tagname=baby
+						//表示匹配到了http://127.0.0.1:8000/bloglistbytag,
+						//?tagname=baby 表示是这个匹配页的参数,不算入匹配内容
+			r'bar'	//既嫩匹配到 http://127.0.0.1:8000/xxx/bar/kkk/ ,又能匹配到 http://127.0.0.1:8000/bar/lll/ 等等
+				//又能匹配到 http://127.0.0.1:8000/sgbarp/uuuu/
+				//所以 注意合理使用 ^ 符, 和 $ 符 的重要
+		继续分析url() 的后两个参数,例子:
+			views.py:
+			def add(request):
+			    a = request.GET['a']
+			    b = request.GET['b']
+			    c = int(a)+int(b)
+			    return HttpResponse(str(c))
+			def add2(request, a, b):
+			    c = int(a) + int(b)
+			    return HttpResponse(str(c))
+			urls.py:
+			    当 url(r'^add/$', views.add, name='first_add') 这样注册url,
+			    	登陆 127.0.0.1/add/?a=4&b=5 时,得到页面输出 9 这个数字
+			    当 url(r'^add/(\d+)/(\d+)/$', views.add2, name='second_add') 这样注册url,
+			    	点击 <a href="/add/4/5/">计算 4+5</a> 的链接
+				便登陆 127.0.0.1/add/4/5 时,得到页面输出 9 这个数字
+				点击 <a href="{% url 'second_add' 4 5 %}">计算 4+5</a> 的链接,
+				也能登陆 127.0.0.1/add/4/5 时,得到页面输出 9 这个数字	
+	manage.py工具集学习:
+		syncdb	//数据库同步 ,即,更改了数据库的表单配置什么的,需要更新数据库内容!!
+			//重要的功能是 把 新的model 转化成 表单, 
+			//但是,更新原来的model 或者会不会破坏已存在的数据条内容,还没实践过!!
+
+javascript学习:	
+	javascript可写在 <head>段,或者<body>段
+	注意javascript 自带一个基础框架库,可直接使用依稀基础函数,如果要使用其他框架库,例如jquery,就要加载框架
+	javascript与 html 的接口 一般是指 onclick,onmouseover,onload,onchange,onmousout,onmousedown、onmouseup
+JS HTML DOM 和浏览器BOM:
+	其实就是我们上述认为的 javascript 自带一个基础框架库DOM,提供多种种函数动态改变 HTML 页内容,
+	也可以改变 css内容
+	浏览器BOM 提供的是与浏览器有关的 javascript 基础框架库
+json学习:
+	json是一种特殊的数据格式标准,方便各类语言引擎执行数据处理和网络传输,
+	规范了大规模数据处理和传输,能直接被javascript直接处理,与javascript对象无缝转换
+	但并不能说是javascript语法标准之一!!	
+jquery学习:
+	jquery是javascript 应用框架,网页使用前,需要加载框架
+	<script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
+	一般选择使用远程框架文件,而不要选择本地框架文件
+	然后下一个<script></script>内就可以填写jquery提供的执行函数了
+	一般scropt脚本都会放在html的前部位置	
+	jQuery 使用 $ 符号作为 jQuery 的简写,但是也有很多其他javascript使用$作为简写标识符号,
+		这时可通过nocondflict()来释放简写符,让给其他框架,例如以下一段代码:
+		<head>
+		<meta charset="utf-8">
+		<script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
+		<script>
+		$.noConflict();
+		jQuery(document).ready(function(){
+		  jQuery("button").click(function(){
+		    jQuery("p").text("jQuery 仍然在工作!");
+		  });
+		});
+		</script>
+		</head>
+		您也可以创建自己的简写。noConflict() 可返回对 jQuery 的引用，您可以把它存入变量，以供稍后使用。例如:
+		<script>
+		var jq = $.noConflict();
+		jq(document).ready(function(){
+		  jq("button").click(function(){
+		    jq("p").text("jQuery 仍然在工作!");
+		  });
+		});
+		</script>	
+	jquery选择器,其实就是 jqurey(xx) 或 $(xx) 中的xx变量格式:
+		1.基本选择器
+		$("#id")            //ID选择器
+		$("div")            //元素选择器
+		$(".classname")     //类选择器
+		$(".classname,.classname1,#id1")     //组合选择器
+		2.层次选择器
+		$("#id>.classname ")    //子元素选择器
+		$("#id .classname ")    //后代元素选择器
+		$("#id + .classname ")    //紧邻下一个元素选择器
+		$("#id ~ .classname ")    //兄弟元素选择器
+		3.过滤选择器(重点)
+		$("li:first")    //第一个li
+		$("li:last")     //最后一个li
+		$("li:even")     //挑选下标为偶数的li
+		$("li:odd")      //挑选下标为奇数的li
+		$("li:eq(4)")    //下标等于4的li
+		$("li:gt(2)")    //下标大于2的li
+		$("li:lt(2)")    //下标小于2的li
+		$("li:not(#runoob)") //挑选除 id="runoob" 以外的所有li
+		3.2内容过滤选择器
+		$("div:contains('Runob')")    // 包含 Runob文本的元素
+		$("td:empty")                 //不包含子元素或者文本的空元素
+		$("div:has(selector)")        //含有选择器所匹配的元素
+		$("td:parent")                //含有子元素或者文本的元素
+		3.3可见性过滤选择器
+		$("li:hidden")       //匹配所有不可见元素，或type为hidden的元素
+		$("li:visible")      //匹配所有可见元素
+		3.4属性过滤选择器
+		$("div[id]")        //所有含有 id 属性的 div 元素
+		$("div[id='123']")        // id属性值为123的div 元素
+		$("div[id!='123']")        // id属性值不等于123的div 元素
+		$("div[id^='qq']")        // id属性值以qq开头的div 元素
+		$("div[id$='zz']")        // id属性值以zz结尾的div 元素
+		$("div[id*='bb']")        // id属性值包含bb的div 元素
+		$("input[id][name$='man']") //多属性选过滤，同时满足两个属性的条件的元素
+		3.5状态过滤选择器
+		$("input:enabled")    // 匹配可用的 input
+		$("input:disabled")   // 匹配不可用的 input
+		$("input:checked")    // 匹配选中的 input
+		$("option:selected")  // 匹配选中的 option
+		4.表单选择器
+		$(":input")      //匹配所有 input, textarea, select 和 button 元素
+		$(":text")       //所有的单行文本框，$(":text") 等价于$("[type=text]")，推荐使用$("input:text")效率更高，下同
+		$(":password")   //所有密码框
+		$(":radio")      //所有单选按钮
+		$(":checkbox")   //所有复选框
+		$(":submit")     //所有提交按钮
+		$(":reset")      //所有重置按钮
+		$(":button")     //所有button按钮
+		$(":file")       //所有文件域
+AJAX学习:
+	AJAX = 异步 JavaScript 和 XML（Asynchronous JavaScript and XML）。
+	简短地说，在不重载整个网页的情况下，AJAX 通过后台加载数据，并在网页上进行显示。
+	jQuery 提供多个与 AJAX 有关的方法:
+	$(selector).load(URL,data,callback); 
+	例如:	
+		$("#div1").load("demo_test.txt"); 把文件 "demo_test.txt" 的内容加载到指定的 <div> 元素中
+		$("#div1").load("demo_test.txt #p1");把 "demo_test.txt" 文件中 id="p1" 的元素的内容，加载到指定的 <div> 元素中：
+		下面的例子会在 load() 方法完成后显示一个提示框。如果 load() 方法成功，显示"外部内容加载成功！"，否则，则显示错误消息：
+		$("button").click(function(){
+		  $("#div1").load("demo_test.txt",function(responseTxt,statusTxt,xhr){
+		    if(statusTxt=="success")
+		      alert("外部内容加载成功!");
+		    if(statusTxt=="error")
+		      alert("Error: "+xhr.status+": "+xhr.statusText);
+		  });
+		});
+		
+	$.get(URL,callback);	获取 URL 地址上 的内容
+	$.post(URL,data,callback);	把data post到 URL地址上,服务器经过处理后,返回处理后的内容!!!
+	还有关于处理XML典型操作,例如:
+		先新建一个request:
+			xmlhttp=new XMLHttpRequest();
+		然后指定 递出请求然后从服务器所有数据后,执行的处理函数
+ 			xmlhttp.onreadystatechange=function()=function(){...}
+		指出请求是获取一个文本:
+			xmlhttp.open("GET","/try/ajax/ajax_info.txt",true);
+		发出请求:
+			xmlhttp.send();
+	//传统情况:
+	//	浏览器 登录网页,远程服务器把整页源码发来,浏览器解析源码显示
+	//	浏览器用户提交表单, 远程服务器处理表单请求,重新解析出整页源码,
+	//	服务器重新把新整页源码发过来,浏览器解析源码显示
+	//使用ajax情况:
+	//	浏览器 登录网页,远程服务器把整页源码发来,浏览器解析源码显示,其中一些变量,以一些占位符代替
+	//	浏览器用户提交表单, 实际确实传递了处理请求,
+	//	服务器处理请求,返回结果信息,结果信息填充了旧的整页源码中某个占位符,浏览器解析源码显示
+	//显而易见,使用ajax的话,就避免了 服务器重新解析出整页源码,重新把新整页源码发过来 的耗时操作
+	//ajax占位符操作示范例子为:
+	//	替换占位符原有内容:
+	//		整页源码某段内容 <xxx id="kkk">aaaaaaaa</xxx>,
+	//		提交处理请求后,远程服务器返回 一段vvvvvv内容,替换id="kkk"的段内容,
+	//		然后这段内容就变成 <xxx id="kkk">vvvvvv</xxx>
+	//	填充占位符:
+	//		整页源码某段内容 <hh id="ggg"></hh>,其实并每有实际内容
+	//		提交处理请求后,远程服务器返回 一段momomomo内容,填到id="ggg"的段,
+	//		然后这段内容就变成 <hh id="ggg">momomomo</hh>
+	//	独一无二的占位符,其实就是对应独一无二的 id,号 与段头/尾标识无关,
+	//		譬如说,上述来两例子的 占位符 与 段头/尾标识(xxx,hh) 无关系 只与 id有关
+Node.js学习:
+	是一个服务端javascript
+	就是说,语法,使用javascript标准,但是就像python java 一样有一个解释机,
+	写一个javascript脚本文档出来,可以通过node解释机执行!!!
+
+css学习:
+	css是一种网页样式脚本: 一般的写法是 在 <style></style> 句柄里添加脚本内容
+	例如:
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<meta charset="utf-8"> 
+	<title>菜鸟教程(runoob.com)</title> 
+	<style>
+	h1		//这里设置 h1 标识段内容的 样式脚本
+	{
+		background-color:#6495ed;
+	}
+	p		//这里设置 p 标识段内容的 样式脚本
+	{
+		background-color:#e0ffff;
+	}
+	div		//这里设置 div 标识段内容的 样式脚本
+	{
+		background-color:#b0c4de;
+	}
+	</style>
+	</head>
+	
+	<body>
+	
+	<h1>CSS background-color 实例!</h1>
+	<div>
+	该文本插入在 div 元素中。
+	<p>该段落有自己的背景颜色。</p>
+	我们仍然在同一个 div 中。
+	</div>
+	
+	</body>
+	</html>
+正则表达式学习:
+	常用搜索通配符:?和*,例如:
+	像 data?.dat 这样的模式将查找下列文件：
+		data1.dat
+		data2.dat
+		datax.dat
+		dataN.da 
+	使用 * 字符代替 ? 字符扩大了找到的文件的数量。data*.dat 匹配下列所有文件：
+		data.dat
+		data1.dat
+		data2.dat
+		data12.dat
+		datax.dat
+		dataXYZ.dat
+	但是,正则表达式中 ? 和 * 与上述的用法有区别!!!!!!
+	通用表达符:	
+		.	//匹配除换行符 \n 之外的任何单字符。要匹配 . ，请使用 \. 。
+		[ ]	//标记一个中括号表达式的开始。要匹配 [，请使用 \[。
+		^	//匹配输入字符串的开始位置，除非在方括号表达式中使用，此时它表示不接受该字符集合。要匹配 ^ 字符本身，请使用 \^。
+		$	//匹配输入字符串的结尾位置。如果设置了 RegExp 对象的 Multiline 属性，则 $ 也匹配 '\n' 或 '\r'。
+			//要匹配 $ 字符本身，请使用 \$。
+		?	//匹配前面的子表达式零次或一次，或指明一个非贪婪限定符。要匹配 ? 字符，请使用 \?。
+			//例如 colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）。
+		+	//匹配前面的子表达式一次或多次。要匹配 + 字符，请使用 \+。
+			//例如 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。
+		*	//匹配前面的子表达式零次或多次。要匹配 * 字符，请使用 \*。
+			//例如 runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，
+			//	也可以出现一次或者多次（0次、或1次、或多次）。
+		{}	//标记限定符表达式的开始。要匹配 {，请使用 \{。
+			//{n} 	n 是一个非负整数。匹配确定的 n 次。例如，'o{2}' 不能匹配 "Bob" 中的 'o'，但是能匹配 "food" 中的两个 o。
+			//{n,} 	n 是一个非负整数。至少匹配n 次。例如，'o{2,}' 不能匹配 "Bob" 中的 'o'，
+			//	但能匹配 "foooood" 中的所有 o。'o{1,}' 等价于 'o+'。'o{0,}' 则等价于 'o*'。
+			//{n,m} m 和 n 均为非负整数，其中n <= m。最少匹配 n 次且最多匹配 m 次。
+			//	例如，"o{1,3}" 将匹配 "fooooood" 中的前三个 o。'o{0,1}' 等价于 'o?'。请注意在逗号和两个数之间不能有空格。
+		|	//指明两项之间的一个选择。要匹配 |，请使用 \|。
+		( )	//标记一个子表达式的开始和结束位置。子表达式可以获取供以后使用。要匹配这些字符，请使用 \( 和 \)。
+		\
+			// \*   代表*符号本身!! \加符号时(?,>,*,&...)表示转义字符意思,
+			// \cx 	匹配由x指明的控制字符。例如， \cM 匹配一个 ctrl+m(即回车符)。
+			//	x 的值必须为 A-Z 或 a-z 之一。否则，将 c 视为一个原义的 'c' 字符。
+			// \f 	匹配一个换页符。等价于 \x0c 和 \cL。
+			// \n 	匹配一个换行符。等价于 \x0a 和 \cJ。
+			// \r 	匹配一个回车符。等价于 \x0d 和 \cM。
+			// \s 	匹配任何空白字符，包括空格、制表符、换页符等等。等价于 [ \f\n\r\t\v]。
+			// \S 	匹配任何非空白字符。等价于 [^ \f\n\r\t\v]。
+			// \t 	匹配一个制表符。等价于 \x09 和 \cI。
+			// \v 	匹配一个垂直制表符。等价于 \x0b 和 \cK。
+			// \b 	匹配一个字边界，即字与空格间的位置,或空格与字的位置
+			// \B 	非字边界匹配。
+	更加具体理论的 通用表达符说明 :	
+		\ 	将下一个字符标记为一个特殊字符、或一个原义字符、或一个 向后引用、或一个八进制转义符。
+			例如，'n' 匹配字符 "n"。'\n' 匹配一个换行符。序列 '\\' 匹配 "\" 而 "\(" 则匹配 "("。
+		^ 	匹配输入字符串的开始位置。如果设置了 RegExp 对象的 Multiline 属性，^ 也匹配 '\n' 或 '\r' 之后的位置。
+		$ 	匹配输入字符串的结束位置。如果设置了RegExp 对象的 Multiline 属性，$ 也匹配 '\n' 或 '\r' 之前的位置。
+		* 	匹配前面的子表达式零次或多次。例如，zo* 能匹配 "z" 以及 "zoo"。* 等价于{0,}。
+		+ 	匹配前面的子表达式一次或多次。例如，'zo+' 能匹配 "zo" 以及 "zoo"，但不能匹配 "z"。+ 等价于 {1,}。
+		? 	匹配前面的子表达式零次或一次。例如，"do(es)?" 可以匹配 "do" 或 "does" 中的"do" 。? 等价于 {0,1}。
+		{n} 	n 是一个非负整数。匹配确定的 n 次。例如，'o{2}' 不能匹配 "Bob" 中的 'o'，但是能匹配 "food" 中的两个 o。
+		{n,} 	n 是一个非负整数。至少匹配n 次。例如，'o{2,}' 不能匹配 "Bob" 中的 'o'，
+			但能匹配 "foooood" 中的所有 o。'o{1,}' 等价于 'o+'。'o{0,}' 则等价于 'o*'。
+		{n,m} 	m 和 n 均为非负整数，其中n <= m。最少匹配 n 次且最多匹配 m 次。
+			例如，"o{1,3}" 将匹配 "fooooood" 中的前三个 o。'o{0,1}' 等价于 'o?'。请注意在逗号和两个数之间不能有空格。
+		? 	当该字符紧跟在任何一个其他限制符 (*, +, ?, {n}, {n,}, {n,m}) 后面时，匹配模式是非贪婪的。
+			非贪婪模式尽可能少的匹配所搜索的字符串，而默认的贪婪模式则尽可能多的匹配所搜索的字符串。
+			例如，对于字符串 "oooo"，'o+?' 将匹配单个 "o"，而 'o+' 将匹配所有 'o'。
+		. 	匹配除 "\n" 之外的任何单个字符。要匹配包括 '\n' 在内的任何字符，请使用像"(.|\n)"的模式。
+		(pattern) 	匹配 pattern 并获取这一匹配。所获取的匹配可以从产生的 Matches 集合得到，
+				在VBScript 中使用 SubMatches 集合，在JScript 中则使用 $0…$9 属性。要匹配圆括号字符，请使用 '\(' 或 '\)'。
+		(?:pattern) 	匹配 pattern 但不获取匹配结果，也就是说这是一个非获取匹配，不进行存储供以后使用。
+				这在使用 "或" 字符 (|) 来组合一个模式的各个部分是很有用。
+				例如， 'industr(?:y|ies) 就是一个比 'industry|industries' 更简略的表达式。
+		(?=pattern) 	正向预查，在任何匹配 pattern 的字符串开始处匹配查找字符串。
+				这是一个非获取匹配，也就是说，该匹配不需要获取供以后使用。
+				例如，'Windows (?=95|98|NT|2000)' 能匹配 "Windows 2000" 中的 "Windows" ，
+				但不能匹配 "Windows 3.1" 中的 "Windows"。预查不消耗字符，
+				也就是说，在一个匹配发生后，在最后一次匹配之后立即开始下一次匹配的搜索，而不是从包含预查的字符之后开始。
+		(?!pattern) 	负向预查，在任何不匹配 pattern 的字符串开始处匹配查找字符串。
+				这是一个非获取匹配，也就是说，该匹配不需要获取供以后使用。
+				例如'Windows (?!95|98|NT|2000)' 能匹配 "Windows 3.1" 中的 "Windows"，
+				但不能匹配 "Windows 2000" 中的 "Windows"。预查不消耗字符，
+				也就是说，在一个匹配发生后，在最后一次匹配之后立即开始下一次匹配的搜索，而不是从包含预查的字符之后开始。
+		x|y 	匹配 x 或 y。例如，'z|food' 能匹配 "z" 或 "food"。'(z|f)ood' 则匹配 "zood" 或 "food"。
+		[xyz] 	字符集合。匹配所包含的任意一个字符。例如， '[abc]' 可以匹配 "plain" 中的 'a'。
+		[^xyz] 	负值字符集合。匹配未包含的任意字符。例如， '[^abc]' 可以匹配 "plain" 中的'p'、'l'、'i'、'n'。
+		[a-z] 	字符范围。匹配指定范围内的任意字符。例如，'[a-z]' 可以匹配 'a' 到 'z' 范围内的任意小写字母字符。
+		[^a-z] 	负值字符范围。匹配任何不在指定范围内的任意字符。例如，'[^a-z]' 可以匹配任何不在 'a' 到 'z' 范围内的任意字符。
+		\b 	匹配一个单词边界，也就是指单词和空格间的位置。例如， 'er\b' 可以匹配"never" 中的 'er'，但不能匹配 "verb" 中的 'er'。
+		\B 	匹配非单词边界。'er\B' 能匹配 "verb" 中的 'er'，但不能匹配 "never" 中的 'er'。
+		\cx 	匹配由 x 指明的控制字符。例如， \cM 匹配一个 Control-M 或回车符。x 的值必须为 A-Z 或 a-z 之一。
+			否则，将 c 视为一个原义的 'c' 字符。
+		\d 	匹配一个数字字符。等价于 [0-9]。
+		\D 	匹配一个非数字字符。等价于 [^0-9]。
+		\f 	匹配一个换页符。等价于 \x0c 和 \cL。
+		\n 	匹配一个换行符。等价于 \x0a 和 \cJ。
+		\r 	匹配一个回车符。等价于 \x0d 和 \cM。
+		\s 	匹配任何空白字符，包括空格、制表符、换页符等等。等价于 [ \f\n\r\t\v]。
+		\S 	匹配任何非空白字符。等价于 [^ \f\n\r\t\v]。
+		\t 	匹配一个制表符。等价于 \x09 和 \cI。
+		\v 	匹配一个垂直制表符。等价于 \x0b 和 \cK。
+		\w 	匹配包括下划线的任何单词字符。等价于'[A-Za-z0-9_]'。
+		\W 	匹配任何非单词字符。等价于 '[^A-Za-z0-9_]'。
+		\xn 	匹配 n，其中 n 为十六进制转义值。十六进制转义值必须为确定的两个数字长。
+			例如，'\x41' 匹配 "A"。'\x041' 则等价于 '\x04' & "1"。正则表达式中可以使用 ASCII 编码。
+		\num 	匹配 num，其中 num 是一个正整数。对所获取的匹配的引用。例如，'(.)\1' 匹配两个连续的相同字符。
+		\n 	标识一个八进制转义值或一个向后引用。如果 \n 之前至少 n 个获取的子表达式，则 n 为向后引用。
+			否则，如果 n 为八进制数字 (0-7)，则 n 为一个八进制转义值。
+		\nm 	标识一个八进制转义值或一个向后引用。如果 \nm 之前至少有 nm 个获得子表达式，则 nm 为向后引用。
+			如果 \nm 之前至少有 n 个获取，则 n 为一个后跟文字 m 的向后引用。
+			如果前面的条件都不满足，若 n 和 m 均为八进制数字 (0-7)，则 \nm 将匹配八进制转义值 nm。
+		\nml 	如果 n 为八进制数字 (0-3)，且 m 和 l 均为八进制数字 (0-7)，则匹配八进制转义值 nml。
+		\un 	匹配 n，其中 n 是一个用四个十六进制数字表示的 Unicode 字符。例如， \u00A9 匹配版权符号 (?)。
+	表达符号的优先级:(从高到低排)
+		\ 				转义符
+		(), (?:), (?=), [] 		圆括号和方括号
+		*, +, ?, {n}, {n,}, {n,m} 	限定符
+		^, $, \任何元字符、任何字符 	定位点和序列（即：位置和顺序）
+		| 				替换，"或"操作
+						字符具有高于替换运算符的优先级，使得"m|food"匹配"m"或"food"。
+						若要匹配"mood"或"food"，请使用括号创建子表达式，从而产生"(m|f)ood"。
+		(注意,同级别的,从左到右进行运算) 
+	实战:
+		/Chapter [1-9][0-9]*/	//注意 需要用前后的"/"符号包住中间的正则表达式,是一种规范写法!!
+					//这表达式表示除了匹配 Chapter 1  至  Chapter 99 的范围,还有例如可匹配到
+					//Chapter 133 , Chapter 288888 , chapter 5777777777 , 等这些奇怪的字符串 	
+		/Chapter [0-9]{1,2}/	//这表达式表示只匹配 Chapter 0  至  Chapter 99 的范围!!!
+		/Chapter [1-9][0-9]?/		//这表达式表示 Chapter 1  至  Chapter 99 的范围!!!
+		/Chapter [1-9][0-9]{0,1}/	//这表达式表示 Chapter 1  至  Chapter 99 的范围!!!
+		/<.*>/		//下面的表达式匹配从开始小于符号 (<) 到关闭 H1 标记的大于符号 (>) 之间的所有内容
+				//	即可以匹配整句 <H1>Chapter 1 - 介绍正则表达式</H1>	
+				//注意,这里的 * 是指后接0个或多个 . 表达式符,即后接0个或多个任意字符,所以可以匹配整句,
+		/<.*?>/		//这里 学习 最少匹配概念, *? 或者 +? 都是最小匹配组合符!!!
+				//比如 	<H1>Chapter 1 - 介绍正则表达式</H1>,
+				//这里 就只会匹配到 <H1> 而已, 而不会匹配整句!!!
+		/<\w+?>/	//同样也是最少匹配 , <H1>Chapter 1 - 介绍正则表达式</H1>, 一句,只会匹配到 <H1> 而已
+				// \W 也表示字符类, 与 . 是一样的意思
+		/\bCha/		//可以匹配到单词 Chapter 的Cha 
+		/ter\b/		//可以匹配到单词 Chapter 的ter
+		/\Bapt/		//可以匹配到单词 Chapter 的apt ,但不能匹配单词 aptitude 中的字符串 apt
+	javascript实战:
+		1,
+		<script>
+		var str = "Is is the cost of of gasoline going up up";
+		var patt1 = /\b([a-z]+) \1\b/ig;
+		document.write(str.match(patt1));
+		</script>
+		//  /\b([a-z]+) \1\b/ig 匹配出 Is is,of of,up up 并显示
+		//第一个\b 是空格与字符的字边界,第二个\b 是字符与控股的边界
+		// ([a-z]+) 很明显指的是 Is is of up
+		// \1 指的是第一个子匹配项 即 ([a-z]+)
+		// 没有 后面的ig时, /\b([a-z]+) \1\b/ 只会匹配到 Is is 一条!!!!
+		// i只不区分大小写,g指全局, 全局指最多次遍历匹配, 于是把 of of,up up 这两条也匹配出来!!!
+		// 最终得到一个包含两个数据的数组:
+		//	patt1[0] = "Is is,of of,up up"
+		//	patt1[1] = "up"
+		2,
+		<script>
+		var str = "http://www.runoob.com:80/html/html-tutorial.html";
+		var patt1 = /(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/;
+		arr = str.match(patt1);
+		for (var i = 0; i < arr.length ; i++) {
+		    document.write(arr[i]);
+			document.write("<br>");
+		}
+		</script>
+		// /(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/ 完全匹配 http://www.runoob.com:80/html/html-tutorial.html
+		// (\w+):\/\/	匹配出 	http://    其中 (\w+)匹配出http
+		// ([^/:]+)  中 [^/:] 的^在这里并没有开头的意思,但 ^/: 指从此处开始,匹配不包括 / 和 : 这两个符号的意思
+		//	所以,这时+相当于 一个或多个[^/:] 的意思,于是 连续匹配了 www.runoob.com,
+		//	遇到:的时候,^/:不满足,所以打住了,
+		//	所以 ([^/:]+) 匹配了 www.runoob.com
+		//(:\d*)?	匹配出 :80 , 
+		//	首先 / 和 : 符号在正则方程里就是纯粹 / 和 : 符号, 没有其他意思,也不需要使用转义字符 \ 去表达,
+		//	\d 就是匹配 数字,\d* 就是匹配任意位数的数字
+		//	?  就是指 0个或1个 (:\d*) , 于是就匹配出了  :80
+		//([^# ]*)	匹配出	/html/html-tutorial.html 
+		//	[^# ] 表示 匹配不包括 # 字符
+		//	* 表示 0个或者多个 [^# ] 所以最终匹配出/html/html-tutorial.html
+		// 最终得到一个包含多个数据的数组:
+		//	arr[0] = "http://www.runoob.com:80/html/html-tutorial.html"
+		//	arr[1] = "http"
+		//	arr[2] = "www.runoob.com"
+		//	arr[3] = ":80"
+		//	arr[4] = "/html/html-tutorial.html"
+		//所以注意到, js 会把 正则表达式的 () 子表达式匹配出的内容也会保存起来!!!!!
+	注意区分:
+		^once 和 [^once] ,前者是,匹配出一个开头是once字符串内容的句,
+				  后者是,匹配当前字符中不能是 c,e,n,o 其中之一!!!	
+	在线实验网址: https://c.runoob.com/front-end/854 (非常好用)
+		     https://c.runoob.com/
+html5 学习:
+	并没有太难的!!!
+	主要是video 和数据库的接口重点看看
+MangoDB(分布式文件存储的数据库,有别与Mysql):
+	manggo 的shell 命令操作是符合javascript语言标准
+	而Mysql的shell 命令操作是基于 一整套sql语法!!
+	mangoDB 的每条数据条格式与 json相似 例如:
+		{"site":"www.baidu.com"}
+		{"site":"www.google.com","name":"Google"}
+		{"site":"www.runoob.com","name":"菜鸟教程","num":5}
+	与sql比较!!!
+		SQL术语/概念 	MongoDB术语/概念 	解释/说明
+		database 	database 	数据库
+		table 	collection 	数据库表/集合
+		row 	document 	数据记录行/文档
+		column 	field 	数据字段/域
+		index 	index 	索引
+		table joins 	  	表连接,MongoDB不支持
+		primary key 	primary key 	主键,MongoDB自动将_id字段设置为主键
+	Capped collections 就是固定大小的collection	
+	在MongoDB数据库中名字空间 <dbname>.system.* 是包含多种系统信息的特殊集合(Collection)，如下:
+		集合命名空间		 	描述
+		dbname.system.namespaces 	列出所有名字空间。
+		dbname.system.indexes 		列出所有索引。
+		dbname.system.profile 		包含数据库概要(profile)信息。
+		dbname.system.users 		列出所有可访问数据库的用户。
+		dbname.local.sources 		包含复制对端（slave）的服务器信息和状态。		
+	MongoDB 数据类型
+		数据类型 	描述
+		String		字符串。存储数据常用的数据类型。在 MongoDB 中，UTF-8 编码的字符串才是合法的。
+		Integer		整型数值。用于存储数值。根据你所采用的服务器，可分为 32 位或 64 位。
+		Boolean		布尔值。用于存储布尔值（真/假）。
+		Double		双精度浮点值。用于存储浮点值。
+		Min/Max keys	将一个值与 BSON（二进制的 JSON）元素的最低值和最高值相对比。
+		Arrays		用于将数组或列表或多个值存储为一个键。
+		Timestamp	时间戳。记录文档修改或添加的具体时间。
+		Object		用于内嵌文档。
+		Null		用于创建空值。
+		Symbol		符号。该数据类型基本上等同于字符串类型，但不同的是，它一般用于采用特殊符号类型的语言。
+		Date		日期时间。用 UNIX 时间格式来存储当前日期或时间。你可以指定自己的日期时间：创建 Date 对象，传入年月日信息。
+		Object ID	对象 ID。用于创建文档的 ID。
+		Binary Data	二进制数据。用于存储二进制数据。
+		Code		代码类型。用于在文档中存储 JavaScript 代码。
+		Regular expression	正则表达式类型。用于存储正则表达式。
+	启动mangoDB服务:
+		mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+			mongodb:// 这是固定的格式，必须要指定。
+			username:password@ 可选项，如果设置，在连接数据库服务器之后，驱动都会尝试登陆这个数据库
+			host1 必须的指定至少一个host, host1 是这个URI唯一要填写的。
+使用用户名fred，密码foobar登录localhost的baz数据库。
+
+mongodb://fred:foobar@localhost/baz				它指定了要连接服务器的地址。如果要连接复制集，请指定多个主机地址。
+			portX 可选的指定端口，如果不填，默认为27017
+			/database 如果指定username:password@，连接并验证登陆指定数据库。若不指定，默认打开 test 数据库。
+			?options 是连接选项。如果不使用/database，则前面需要加上/。
+				所有连接选项都是键值对name=value，键值对之间通过&或;（分号）隔开 
+		例子:
+			使用用户名fred，密码foobar登录localhost的baz数据库。
+			mongodb://fred:foobar@localhost/baz
+
+
+
+
+
+
+
+20170815
+使用GNUroot dbian:
+手机装kali 工具: 
+	https://github.com/LionSec/katoolin/issues?page=3&q=is%3Aissue+is%3Aopen
+	https://mp.weixin.qq.com/s/Safyp-WpK6OzyvJbaHmJOA
+	问题1:
+	katoolin unable to locate package:未解,虽然尝试改 sources.list
+	相关sources.list内容	
+	deb http://http.kali.org/kali kali-rolling main contrib non-free
+	# For source package access, uncomment the following line
+	# deb-src http://http.kali.org/kali kali-rolling main contrib non-free
+	deb http://http.kali.org/kali sana main non-free contrib
+	deb http://security.kali.org/kali-security sana/updates main contrib non-free
+	# For source package access, uncomment the following line
+	# deb-src http://http.kali.org/kali sana main non-free contrib
+	# deb-src http://security.kali.org/kali-security sana/updates main contrib non-free
+	deb http://old.kali.org/kali moto main non-free contrib
+	# For source package access, uncomment the following line
+	# deb-src http://old.kali.org/kali moto main non-free contrib
+手机装 metaspoilt 工具: 
+	msfinstall perssion deny 怀疑缺库!!!!
+	ldd msfinstall 不能查看依赖库,怀疑执行文件不是符合 armhf 硬件框架 
+	最终发现是 chmod 没有起作用!!!,所以唉,什么都做不了
+	不用傻瓜方法,先试试github方法!!
+	rm -r metaspoilt 	//把原来的metaspoilt项目文件夹档案全删除!!	
+	//不行,取不到chmod的权限,就不能正常使用.sh文件
+	
+装桌面 Xserver
+	先 google play 安装个XServer XSDL 框架
+	然后GNUboot:
+		apt-get grade	//本想更新一下库的,居然搞出个大libc6兼容的问题出来!!!
+		apt-get install lxde		
+		卧槽,出错了: 之前的upgrade 把libc6弄乱了,现在都出这么一句 libc-bin: depends: xxxx is installed 之类
+		仅仅 apt-get -f install 未能修复上述问题
+		原因是从kali-rolling 那更新了 libc-dev-bin  libc6-dev 但唯独就是更新libc6 时失败了!!!!
+		而因为后面操作 libc-dev-bin  libc6-dev 需要高版本的 libc6,由于libc6版本每更新所以失败!!!!
+		之前upgrade时,libc6 half-install了,
+		解决(重装libc6旧版本): 
+				先sources.list把 kali-rolling 数据源去掉!!,然后
+				apt-get autoclean
+				apt-get update
+				apt-get upgrade 
+				apt-get install --reinstall libc6=2.19-18+deb8u10  //关键 重装旧版本libc6 
+		至此搞定了 libc6 兼容问题,开始今天的主题:安装lxde桌面环境到手机上!!!
+		apt-get install auto-apt  //先装auto-apt工具,因为,安装lxde需要各种依赖包,但是命令 apt-get install lxde 不会自动安装依赖包
+		auto-apt run apt-get install lxde     //命令格式 auto-apt run [command]	这样就可以自动把依赖包都加上!!!
+		然后 至少给装上一个图形界面的终端 Xterm apt-get install xterm
+		然后打开 XServer XSDL 查看最后蓝屏指导的命令行
+		然后在 GNUboot 上输入添加蓝屏全局变量的命令: export DISPLAY:=0 PLUSE_SERVER=top:127.0.0.1:4712
+		然后在 GNUboot 执行: startlxde &
+		回到 XServer XSDL 就进入了桌面系统了!
+		
+
+
+
+
+
+
+20170823
+metasploit
+	metasploit 是一个 工具框架,打开 metasploit-framework 或者终端输入 msfconsole后,便转到专门的msf终端, msf>
+	armitage是metasploit的图形交互版本,使用armitage前 先打开 metasploit-framework
+	msf的shell 命令 : 一般说,进入msf终端 手动执行msf命令,不实际,现实更趋向打包msf命令成一个shell命令,写入shell脚本执行例如:
+	./msfconsole -x "use exploit/windows/smb/ms08_067_netapi; set RHOST [IP]; set PAYLOAD windows/meterpreter/reverse_tcp; set LHOST [IP]; run; exit"  	//这里 -x 参数就是一参数表示:打包msf命令成一个shell命令,然后执行!!
+	metasploitable 是一个靶机系统,各种公开的漏洞可供使用!!!
+netifera:
+	Installation of Netifera
+		$ cd /usr/src/
+		$ wget http://netifera.com/download/netifera-1.0-linux.gtk.x86.zip
+		$ unzip netifera-1.0-linux.gtk.x86.zip
+		$ mkdir -p /pentest/scanners/
+		$ mv netifera /pentest/scanners/
+burp:抓包
+靶机:
+	metasploitable 是一个靶机系统,各种公开的漏洞可供使用!!!
+	天人文章管理系统 整网站源码!!
+
+
+
+
+
+
+
+
+
+20170830
+linux 常用命令汇总: http://linuxtools-rst.readthedocs.io/zh_CN/latest/base/03_text_processing.html
+命令查看帮助:
+	模查找命令:		man -k clea	//模糊查找含clea字符的命令 
+	whatis 参看命令简述L: 	whatis ls
+	which 查看命令位置:	which ls 
+	man  查看命令详细:	man ls
+	man是一本命令说明书:分9章:
+		(1)、用户可以操作的命令或者是可执行文件
+		(2)、系统核心可调用的函数与工具等
+		(3)、一些常用的函数与数据库
+		(4)、设备文件的说明
+		(5)、设置文件或者某些文件的格式
+		(6)、游戏
+		(7)、惯例与协议等。例如Linux标准文件系统、网络协议、ASCⅡ，码等说明内容
+		(8)、系统管理员可用的管理条令
+		(9)、与内核有关的文件
+	综合使用案例:
+		$whatis printf
+		printf               (1)  - format and print data
+		printf               (1p)  - write formatted output
+		printf               (3)  - formatted output conversion
+		printf               (3p)  - print formatted output
+		printf [builtins]    (1)  - bash built-in commands, see bash(1)		
+		我们看到printf在分类1和分类3中都有；分类1中的页面是命令操作及可执行文件的帮助；
+		而3是常用函数库说明；如果我们想看的是C语言中printf的用法，可以指定查看分类3的帮助：
+		$man 3 printf
+寻找文件 find/locata
+	find是实时查找:
+	$find ./ -name "core*" | xargs file	//搜寻文件或目录
+	$find ./ -name '*.o'		//查找目标文件夹中是否有obj文件
+	$find ./ -name "*.o" -exec rm {} \;		//递归当前目录及子目录删除所有.o文件:
+	如果需要更快的查询，可试试locate；locate会为文件系统建立索引数据库，如果有文件更新，需要定期执行更新命令来更新索引库:
+	$locate string	//寻找包含有string的路径
+	$updatedb	//更新索引数据库, 需要更新数据库，以获得最新的文件索引信息。
+查看文件内容:
+	查看文件：cat vi head tail more
+	$cat -n	xxx	//显示xxx文件内容时,同时显示行号
+	$ls -al | more		//按页显示列表内容
+	$head -n 10 xxx		//只看xxx文件前10行
+	$head -1 xxx		//只显示xxx文件第一行
+	$tail -5 xxx	//显示xxx文件倒数第五行
+	$diff file1 file2	//查看两个文件间的差别
+	$tail -f xxx		//动态显示文本最新信息
+	egrep '裁切' pcb画图经验	//查找 'pcb画图经验' 文件里的 '裁切' 内容所在行
+批命令书写格式:
+	批处理命令连接执行，使用 |
+	串联: 使用分号 ;
+	前面成功，则执行后面一条，否则，不执行:&&
+	前面失败，则后一条执行: ||
+	ls /proc && echo  suss! || echo failed.	//先ls /proc 成功便执行echo suss! 否则执行 echo failed
+	与上述相同效果的是:
+	if ls /proc; then echo suss; else echo fail; fi
+	重定向:
+	ls > kkk	//把ls得到的标准输出内容重定向到 kkk文件里 而不是终端屏幕
+	ls &> kkk	//把ls得到的标准输出 和标准错误的内容 都重定向到 kkk文件里, 而不是显示到终端屏幕
+	:> kkk		//清空kkk文件里的内容
+	echo aa >> kkk	//把 aa 这个标准输出的内容 重定向添加到 kkk 文件里
+	echo aa > kkk	//把 aa 这个标准输出的内容 重定向并且完全替换 kkk 文件的所有内容!!
+	综合案例:
+	cat pcb画图经验 | grep pcb | grep -v '!!' | wc -l	
+	//先cat pcb画图经验 显示所有内容到标准输出文件, 
+	//然后, grep pcb 从标准输出文件里 筛选所有含 pcb 的内容行,覆盖标准输出文件
+	//然后, grep -v '!!' 从标准输出文件里 筛选所有含 !! 的内容行去掉,剩下的 重新覆盖标准输出文件
+	//然后, wc -l 统计标准输出文件里有多少行内容,得到的结果 重新覆盖标准输出文件 
+	//最后,标准输出文件 的内容 全部 发送到终端屏幕, 标准输出文件自身被清空!!
+终端快捷键:
+	shift + ctrl + C/V	//复制粘贴
+	ctrl + U	//删光 整行 已输入的命令行字符 (注意只能删单行内容,即使使用\符号组合的多单行组合命令字符,也只能删光标所在单行)
+	ctrl + W	//删字符串内容至 最近的空格
+文本处理:
+	find 文件查找
+	find . \( -name "*.txt" -o -name "*.pdf" \) -print	//查找txt和pdf文件,'.'指当前路径
+	find . -name ".h" -o ! \( -name "*.txt" -o -name "*.pdf" -o -name "*.c"  \)  //查找h文件,但排除txt,pdf,c文件
+	find . -regex  ".*\(\.txt|\.pdf\)$"	//正则方式查找.txt和pdf	补充:-iregex： 忽略大小写的正则
+	find . ! -name "*.txt" -print		//否定参数 "!" ,查找所有非txt文本:
+	find . -maxdepth 1 -type f	//指定搜索深度,打印出当前目录的文件（深度为1）
+	定制搜索
+	find . -type d -print  //只列出所有目录	补充:-type f 文件, -type l 符号链接, -type d 目录
+	//find支持的文件检索类型可以区分普通文件和符号链接、目录等，但是二进制文件和文本文件无法直接通过find的类型区分出来；
+	file命令可以检查文件具体类型（二进制或文本）:
+	$file xxx  //识别二进制文件
+		xxxi: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), 
+	for GNU/Linux 2.6.9, not stripped
+	$file kkk  //识别文本文件
+	kkk: ASCII text
+	所以,可以用以下命令组合来实现查找本地目录下的所有二进制文件:
+		ls -lrt | awk '{print $9}'|xargs file|grep  ELF| awk '{print $1}'|tr -d ':'
+	按时间搜索
+            -atime 访问时间 (单位是天，分钟单位则是-amin，以下类似）
+            -mtime 修改时间 （内容被修改）
+            -ctime 变化时间 （元数据或权限变化）
+	find . -atime 7 -type f -print		//最近 第7天 被访问过的所有文件
+	find . -atime -7 -type f -print		//最近 7天内 被访问过的所有文件
+	find . -atime +7 type f -print		//查询 7天前 被访问过的所有文件
+	按大小搜索：
+	find . -type f -size +2k	//寻找大于2k的文件  补充: w(字=word=32bits) k(kb) M(mb) G(gb) 
+	按权限查找:
+	find . -type f -perm 644 -print //找具有可执行权限的所有文件
+	按用户查找:
+	find . -type f -user weber -print// 找用户weber所拥有的文件
+	找到后的后续动作
+	find . -type f -name "*.swp" -delete		//删除当前目录下所有的swp文件
+	find . -type f -name "*.swp" | xargs rm		//删除当前目录下所有的swp文件
+	find . -type f -user root -exec chown weber {} \;	//将当前目录下的所有权变更为weber, 执行动作（强大的exec）
+								//注：{}是一个特殊的字符串，对于每一个匹配的文件，{}会被替换成相应的文件名
+	find . -type f -mtime +10 -name "*.txt" -exec cp {} OLD \;	//将找到的文件全都copy到另一个目录
+	结合多个命令
+	//-exec ./commands.sh {} \    :如果需要后续执行多个命令，可以将多个命令写成一个脚本。然后 -exec 调用时执行脚本即可:
+	-print的定界符		
+	//默认使用’\n’作为文件的定界符； -print0 使用’\0’作为文件的定界符，这样就可以搜索包含空格的文件；
+	grep 文本搜索
+	grep hllo kkk //grep最简单,不严谨的默认命令, 从 kkk文件 中搜索 hello 的字符内容, 
+	常用参数
+	-o 只输出匹配的文本行 VS -v 只输出没有匹配的文本行
+	-c 统计文件中包含文本的次数	// grep -c “text” filename
+	-n 打印匹配的行号
+	-i 搜索时忽略大小写
+	-l 只打印文件名
+	grep "class" . -R -n	//在多级目录中对文本递归搜索(程序员搜代码的最爱）
+	grep -e "class" -e "vitural" kkk	//匹配kkk文件里的多个搜索项,
+	grep "test" file* -lZ| xargs -0 rm	//grep输出以0作为结尾符的文件名（-z）	(未用过,涉及rm 需要比较谨慎)
+	cat LOG.* | tr a-z A-Z | grep "FROM " | grep "WHERE" > b	//综合应用：将日志中的所有带where条件的sql查找查找出来:
+	查找中文示例：(未成功)
+		工程目录中utf-8格式和gb2312格式两种文件，要查找字的是中文
+    		查找到它的utf-8编码和gb2312编码分别是E4B8ADE69687和D6D0CEC4
+		查询:
+		grep：grep -rnP "\xE4\xB8\xAD\xE6\x96\x87|\xD6\xD0\xCE\xC4" *即可
+		汉字编码查询：http://bm.kdd.cc/
+	xargs 命令行参数转换
+	xargs 能够将输入数据转化为特定命令的命令行参数；这样，可以配合很多命令来组合使用。比如grep，比如find； - 将多行输出转化为单行输出
+	cat xxx| xargs	//这里是把 xxx 文件输出到 标准输出文件,然后把标准输出文件里的内容全部看作为一行 参数 然后print出 
+	cat single.txt | xargs -n 3	//将单行转化为多行,然后print出 -n：指定每行显示的字段数,
+					//即把一整行内容分成多行输出,每行显示三段内容,每段内容由源文档固有的空格或者回车做分割
+	xargs参数说明
+		d 定义定界符 （默认为空格 多行的定界符为 n）
+		-n 指定输出为多行
+		-I {} 指定替换字符串，这个字符串在xargs扩展时会被替换掉,用于待执行的命令需要多个参数时
+		-0：指定0为输入定界符
+	cat file.txt | xargs -I {} ./command.sh -p {} -1	//具体未测试过
+	find source_dir/ -type f -name "*.cpp" -print0 |xargs -0 wc -l	//统计程序行数
+	./redis-cli smembers $1  | awk '{print $1}'|xargs -I {} ./redis-cli get {}  
+		//综合例子:redis通过string存储数据，通过set存储索引，需要通过索引来查询出所有的值
+	sort 排序
+	字段说明
+		-n 按数字进行排序 VS -d 按字典序进行排序
+		-r 逆序排序
+		-k N 指定按第N列排序
+	sort -nrk 1 kkk		//把文档每行按照 条件重新排序,然后显示出来
+	sort -bd data 		//忽略像空格之类的前导空白字符
+	sort unsort.txt | uniq	//先是重新排序,然后排序后的内容放入 标准输出文件, 然后在标准输出文件里 消除重复行, 最后显示
+	sort unsort.txt | uniq -c	//统计各行在文件中出现的次数
+	sort unsort.txt | uniq -d	//找出重复行
+	//补充:uniq 命令中可指定每行中需要比较的重复内容的参数：-s 开始位置 -w 比较字符数 (没有例子)	
+	tr命令
+	echo 12345 | tr '0-9' '9876543210' //加解密转换，替换对应字符
+	cat text| tr '\t' ' '  		//制表符转空格
+	cat file | tr -d '0-9' 		// 删除所有数字
+	cat file | tr -c '0-9' 		//获取文件中所有数字
+	cat file | tr -d -c '0-9 \n'  	//删除非数字数据
+	cat file | tr -s ' '		//tr -s 压缩文本中出现的重复字符；最常用于压缩多余的空格:
+	tr中可用各种字符类：
+		alnum：字母和数字
+		alpha：字母
+		digit：数字
+		space：空白字符
+		lower：小写
+		upper：大写
+		cntrl：控制（非可打印）字符
+		print：可打印字符
+		使用方法：tr [:class:] [:class:]
+		tr '[:lower:]' '[:upper:]'	//把 upper 转 lower
+	cut -f2,4 filename		//截取文件的第2列和第4列
+	cut -f3 --complement filename	//去文件除第3列的所有列
+	cat -f2 -d";" filename		//-d 指定定界符
+	cut 取的范围
+		N- 第N个字段到结尾
+		M 第1个字段为M
+		N-M N到M个字段
+	cut 取的单位
+		-b 以字节为单位
+		-c 以字符为单位
+		-f 以字段为单位（使用定界符）
+	cut -c1-5 file 			//打印第一到5个字符
+	cut -c-2 file  			//打印前2个字符
+	$echo string | cut -c5-7	//截取文本的第5到第7列
+	将两个文本按列拼接到一起;
+		$ cat file1
+		1
+		2
+		$ cat file2
+		colin
+		book		
+		$ paste file1 file2	//	paste 按列拼接文本
+		1 colin
+		2 book
+		$ paste file1 file2 -d ","	//默认的定界符是制表符，可以用-d指明定界符:
+		1,colin
+		2,book
+	wc -l file 	// 统计行数
+	wc -w file 	// 统计单词数
+	wc -c file 	// 统计字符数
+	sed 's/text/replace_text/' file   //替换 每一行的 第一处匹配的text,替换换成replace_text ,然后print,注意并不会改写 原file文件
+	sed 's/text/replace_text/g' file  //替换 每一行的   所有的text,	  替换换成replace_text ,然后print,注意并不会改写 原file文件
+	sed -i 's/text/repalce_text/g' file	//默认替换后，输出替换后的内容，如果需要直接替换原文件,使用-i:
+	sed '/^$/d' file	//移除空白行 然后print出
+	sed 's/text/\ &++++\ /g' kkk	// & 引用符号, 这里 &引用内容就是 匹配内容text, 这里把所有 "text" 转换成 "\ &++++\ "
+					//即 text 转换成 [空格]text++++[空格], 注意,这里的 "\ ",表示的是空格
+	变量转换 (未证实例子)
+		echo this is en example | sed 's/\w+/[&]/g'	//已匹配的字符串通过标记&来引用.
+		$>[this]  [is] [en] [example]		
+	sed 's/hello\([0-9]\)/\1/'	//例如 例子:hello39878,其中 hello\([0-9]\) 匹配的是hello3,即 \([0-9]\) 匹配到的是3
+					//然后 \1,指的是那个 \([0-9]\) , 即hello3 被替换成3  
+	sed 's/hello\([0-9]\)\([0-9]\)/\2\1/' kkk	//扩展知识,例子: hello39878
+							//hello\([0-9]\)\([0-9]\) 匹配到 hello39
+							//第一个\([0-9]\)\ 匹配的是3,所以 \1 指的是3
+							//第二个\([0-9]\)\ 匹配的是9,所以 \2 指的是9
+							//hello\([0-9]\)\([0-9]\) 被替换成 \2\1,即 hello39 被替换成 93
+	sed 引号关系:
+		p=patten
+		echo pattenjjk_\$p | sed 's/$p/zzz/'	//单引号: $参数符号不起作用 得到 pattenjjk_zzz
+		echo pattenjjk_\$p | sed "s/$p/zzz/" 	//双引号: $参数符号起作用 得到 zzzjjk_$p
+	sed 's/^.\{3\}/&\//g' kkk	//把kkk文件 每行 的前三个任意字符  ^.\{3\} ,被 &\/ 替换
+					//& 引用的是 ^.\{3\} ,结果例子如下:
+					//替换前:		替换后:
+					//llllllllll		lll/lllllll
+					//abcdefghij		abc/defghij
+					//popopopopo		pop/opopopo
+	awk 数据流处理工具:
+	awk最简单脚本结构
+		awk ' BEGIN{ statements } statements2 END{ statements } ' file
+		工作方式
+		1.执行begin中语句块；
+		2.从文件或stdin中读入一行，然后执行statements2，重复这个过程，直到文件全部被读取完毕；
+		3.执行end语句块；
+	echo -e "line1\nline2" | awk 'BEGIN{print "start"} {print } END{ print "End" }'	//使用不带参数的print时，会打印当前行
+	print 的综合例子:
+		echo | awk ' {var1 = "v1" ; var2 = "V2"; var3="v3"; \		
+		print var1, var2 , var3; }'
+		//上述实为 一行命令,通过 \ 符号分两行写, 上述 awk 并没有执行 begin 和 end 两段内容!!
+		//echo 输出了 空白 的内容到 标准输出文件,虽然内容空白, 但标准输出文件"名义上"还是有一行内容的
+		//awk 读取这行内容, 然后执行 var1 = "v1" ; var2 = "V2"; var3="v3"; print var1, var2 , var3; 这组;号分割的命令
+		//屏幕输出:v1 V2 v3
+		echo hello | awk ' {var1 = "v1" ; var2 = "V2"; var3="v3"; print var1, var2 , var3; }'
+		//屏幕依然输出:v1 V2 v3
+		//这时,虽然 标准输出文件已经有 hello 这串字符,awk 也引入了一行费空白的内容,
+		//但是这时,print 带参数, 但没有一个参数指向 awk引入行的内容,所以 print 出的内容 并没有 hello 
+		echo | awk ' {var1 = "v1" ; var2 = "V2"; var3="v3"; print var1"-"var2"-"var3; }'  
+		//使用-拼接符的方式（”“作为拼接符）;
+		//屏幕输出:v1-V2-v3
+	特殊变量： NR NF $0 $1 $2
+		NR:表示记录数量，在执行过程中对应当前行号；
+		NF:表示字段数量，在执行过程总对应当前行的字段数；
+		$NF:表示当前行的最后一字段的文本内容;
+		$0:这个变量包含执行过程中当前行的文本内容；
+		$1:第一个字段的文本内容；
+		$2:第二个字段的文本内容；
+		$3:.....
+	echo -e "line1 f2 f3\n line2 \n line 3" | awk '{print NR":"$0"-"$1"-"$2}'
+		//屏幕输出:
+		//	1:line1 f2 f3-line1-f2
+		//	2: line2 -line2-
+		//	3: line 3-line-3
+	awk '{print $2, $3}' file	//打印每一行的第二和第三个字段
+	awk ' END {print NR}' file	//统计文件的行数
+	echo -e "1\n 2\n 3\n 4\n" | awk 'BEGIN{sum = 0 ; print "begin";} {sum += $1;} END {print "=="; print sum }'	
+		//累加每一行的第一个字段
+	传递外部变量
+		输入来自stdin:
+			var=1000
+			echo | awk '{print vara}' vara=$var // 注意shell上手动设的变量都暂时放在 标准输入文件
+		输入来自文件
+			awk '{print vara}' vara=$var file
+	awk扩展结构,用样式对awk处理的行进行过滤
+		awk 'NR < 5' 			//行号小于5
+		awk 'NR==1,NR==4 {print}' file 	//行号等于1和4的打印出来
+		awk '/linux/' 			//包含linux文本的行（可以用正则表达式来指定，超级强大）
+		awk '!/linux/' 			//不包含linux文本的行
+	awk -F : '{print $NF}' /etc/passwd 	//使用-F来设置定界符（默认为空格) 而这里的定界符是 ":"
+						//-F : 是 针对 $NF的,
+						//例如某一行内容是  games:x:5:60:games:/usr/games:/usr/sbin/nologin
+						//:界定符 把整行内容划分成 6 个字段段内容:
+						// games, x, S, 60, games, /usr/games:/usr/sbin/nologin
+						//$NF 指即保留并print出最后一个字段 /usr/games:/usr/sbin/nologin
+						//如果 -F : 改为 bin, 那么界定符就是 bin,
+						//把整行内容划分成 2 个字段段内容:
+						// games:x:5:60:games:/usr/games:/usr/s, /nologin
+						//那么只保留bin后的内容,即print出: /nologin
+	echo | awk '{"grep root /etc/passwd" | getline cmdout; print cmdout }'	
+		//使用getline，将外部shell命令的输出读入到变量cmdout中:
+		//这里,把grep 得到的 多行内容 的 第一行内容 getline 读入到 awk里,然后print出
+	在awk中使用循环
+		awk '{ for(i=0;i<10;i++){print i ;}; }'	//成功例子
+		for(i=0;i<10;i++){print $i;}		//未测试例子
+		for(i in array){print array[i];}	//未测试例子
+	综合例子:
+		echo '2015_04_02 20:20:08: mysqli connect failed, please check connect info'| \
+		awk -F : '{ for(i=1;i<=3;i++) printf("%s:",$i)}'
+			//echo 一行内容到 标准输出文件
+			//以 :为界定符号分出 4 个字段: 
+			//	2015_04_02 20
+			//	20
+			//	08
+			//	[空格]mysqli connect failed, please check connect info
+			//循环print出 第一,第二,第三个字段 最终print出:  2015_04_02 20:20:08:
+			//这种方式会将最后一个冒号打印出来
+		echo '2015_04_02 20:20:08: mysqli connect failed, please check connect info'|awk -F':' '{print $1 ":" $2 ":" $3; }'
+			//最终print出: 2015_04_02 20:20:08  
+			//比上一个方法好.
+		echo '2015_04_02 20:20:08: mysqli connect failed, please check connect info'| \
+		awk -F':' '{print $1 ":" $2 ":" $3; print $4;}'
+			//这个就分别print出两行内容:
+			//	2015_04_02 20:20:08
+			//	mysqli connect failed, please check connect info
+		seq 9| awk '{lifo[NR] = $0; lno=NR} END{ for(;lno>-1;lno--){print lifo[lno];}} '
+			//以逆序的形式打印行：(tac命令的实现）:
+			//seq 9 输出:
+			//	1
+			//	2
+			//	3
+			//	4
+			//	5
+			//	6
+			//	7
+			//	8
+			//	9
+			//也就说,seq,输出9行内容到 标准输出文件,
+			//awk '{lifo[NR] = $0; lno=NR} END{ for(;lno>-1;lno--){print lifo[lno];}} ' 处理9行内容后,覆盖标准输出文件
+			//最后print得:
+			//	9
+			//	8
+			//	7
+			//	6
+			//	5
+			//	4
+			//	3
+			//	2
+			//	1
+	ps -fe| grep msv8 | grep -v MFORWARD | awk '{print $2}' | xargs kill -9;	//awk结合grep找到指定的服务，然后将其kill掉
+	awk 'NR<=10{print}' filename	//相当于 head命令
+	awk '{buffer[NR%10] = $0;} END{for(i=0;i<11;i++){ print buffer[i %10]} } ' filename	//相当于 tail命令
+	ls -lrt | awk '{print $6}'	//相当于打印指定列
+	ls -lrt | cut -f6		//相当于cut方式实现
+	cat kkk	| awk 'NR==4,NR==30{print}'	//print出kkk文件的第 4 - 30 行的 内容.
+	awk '/start_pattern/, /end_pattern/' filename	//打印含start_pattern的行 直到 含end_pattern的行 的文本.
+	seq 100 | awk '/13/,/15/'	//例子 注意,这里 把 {print}一步 也省略了, 但是结果一样的
+	cat /etc/passwd| awk '/mai.*mail/,/news.*news/' //例子 
+	awk常用内建函数
+		index(string,search_string):返回search_string在string中出现的位置
+		sub(regex,replacement_str,string):将正则匹配到的第一处内容替换为replacement_str;
+		match(regex,string):检查正则表达式是否能够匹配字符串；
+		length(string)：返回字符串长度
+		//为在 awk 里做过正则表达式,所以未尝试
+	echo | awk '{"grep root /etc/passwd" | getline cmdout; print length(cmdout) }'
+	seq 10 | awk '{printf "->%4s\n", $1}'	//printf 类似c语言中的printf，对输出进行格式化:
+	迭代每一行内容----依次print出文本每行内容:
+		传统 shell 方法:(while循环法)
+		while read line; do echo $line; done < kkk // 注意,这是一条完整的shell命令,并非复合命令 !!!
+		//这里有必要 复习 shell 的while循环命令!!
+		//上述 while read line; do echo $line; done 是一条,而非多条,完整命令,单条命令完整性如 ls,cd....一般 
+		// < kkk 是一个命令参数,表示先把 kkk 文件的内容输入到 标准输出文件,然后 这条命令再对标准输出文件操作,最后print出
+		//这条命令相当独特,可以分多行写,而不需要额外写 "\" 分行符,像以下样子:
+		//	kingders@kingders-ThinkPad-T420:~/other$ while read line;
+		//	> do echo $line;
+		//	> done < kkk
+		cat file.txt | (while read line;do echo $line;done)	//也可以这样,注意,这是两条命令拼合的复合命令
+		awk法
+		cat file.txt| awk '{print}'
+	迭代每一个字段----依次print出 行内容里的 每个字段
+		read pp < kkk && for word in $pp; do echo $word; done
+		//read 把 kkk文件里的第一行内容,写入到 标准输入文件的 pp 变量, 然后再执行 && 后一条命令!!
+		//然后 以空格为界定符,把每个字段分别取出写入 标准输出文件,并显示出屏幕来
+		//这里 一定要使用 && 多命令组合符,而非 | 多命令组合符号,
+		//使用 | 拼接命令时,read 读出kkk第一行内容,但未刷入标准输入文件的 pp 变量, 
+		//	接着就执行 for 命令, for命令用到pp变量,pp变量未存在,矛盾了
+		//使用 && 拼接命令时,确保read pp < kkk 执行完毕并正确,才执行for命令, 所以for命令正常执行
+		//for word in $oo; do echo $word; done  这也是一条完整命令,从标准输入文件里读取 pp 变量,
+		//这里有必要 复习 shell 的 for循环命令!!
+		//这条命令也是可以分行写而没有问题!!
+		//	kingders@kingders-ThinkPad-T420:~/other$ for word in $pp;
+		//	> do echo $word;
+		//	> done
+	迭代每一个字符----显示一个字段里的每一个字符
+		//${string:start_pos:num_of_chars}：从字符串中提取num个字符；(bash文本切片）
+		//${#word}:返回变量word的长度
+		传统 shell 方法:(for循环法)
+		for((i=0;i<${#word};i++)) do echo ${word:i:1}; done
+		//这是一条完整的命令,这是for命令的另一种写法, 注意 for() do 之间没有";"号 ,也可以分行写
+		//	kingders@kingders-ThinkPad-T420:~/other$ for((i=0;i<${#word};i++))
+		//	> do
+		//	> echo ${word:i:1};
+		//	> done
+	$od -c filename		//以ASCII字符显示文件:
+
+
+
+
+
+
+
+
+
+
+
+20170831
+linux系统管理工具:
+$ps -ef				//查询正在运行的进程信息
+$ps -ef | grep colin115		//查询归属于用户colin115的进程
+$ps -lu kingders		//也是查询归属于用户 kingders的进程,
+pgrep -l re	//查询进程名中含有re的进程
+	2 kthreadd
+	28 ecryptfs-kthrea
+	29515 redis-server
+$ps -ajx	//以完整的格式显示所有的进程
+$top	//显示进程信息，并实时更新
+	//输入top命令后，进入到交互界面；接着输入字符命令后显示相应的进程状态：
+	//对于进程，平时我们最常想知道的就是哪些进程占用CPU最多，占用内存最多。以下两个命令就可以满足要求:
+	//	P：根据CPU使用百分比大小进行排序。
+	//	M：根据驻留内存大小进行排序。
+	//	i：使top不显示任何闲置或者僵死进程。
+lsof -i:3306		//查看端口占用的进程状态	........... 测试失败
+			//lsof（list open files）是一个列出当前系统打开文件的工具。
+			//在linux环境下，任何事物都以文件的形式存在，通过文件不仅仅可以访问常规数据，还可以访问网络连接和硬件。
+			//如传输控制协议 (TCP) 和用户数据报协议 (UDP) 套接字等,在查询网络端口时，经常会用到这个工具。	
+lsof -u kingfders	//查看用户username的进程所打开的文件
+lsof -c init		//查询init进程当前打开的文件
+lsof -p 23295		//查询指定的进程ID(23295)打开的文件：
+lsof +d mydir1/		//查询指定目录下被进程开启的文件（使用+D 递归目录）：
+$kill PID		//杀死指定PID的进程 (PID为Process ID)
+kill -9 3434		//杀死与 进程PID3434 相关进程
+$kill %job		//杀死job工作 (job为job number)
+分析进程栈:
+	ps -ef | grep gedit	//找出 ksmd 进程 pid号
+	kingders 17231  1859  2 15:55 ?        00:02:37 gedit
+	pmap 17231		//使用命令pmap，来输出进程内存的状况，可以用来分析进程堆栈；
+	17231:   gedit
+	0000000000400000    548K r-x-- gedit
+	0000000000689000      8K r---- gedit
+	000000000068b000     12K rw--- gedit
+	0000000001143000  27112K rw---   [ anon ]
+	00007f6821cc1000   4096K rw-s-   [ shmid=0x3b38016 ]
+	00007f68220c1000      8K r-x-- ISO8859-1.so
+	00007f68220c3000   2044K ----- ISO8859-1.so
+	00007f68222c2000      4K r---- ISO8859-1.so
+	00007f68222c3000      4K rw--- ISO8859-1.so
+	00007f68222c4000     44K r-x-- libenchant_hspell.so
+	.............
+ps -u kingders | awk '/av_/ {print "kill -9 " $1}' | sh		//将用户kingders下的所有进程名以av_开头的进程终止:
+ps -fe| grep kingders | grep HOST |awk '{print $2}' | xargs kill -9;	//将用户kingders下所有进程名中包含HOST的进程终止:
+cat /proc/cpuinfo	//查询CPU信息
+cat /proc/cpuinfo | grep processor | wc -l	//查看CPU的核的个数
+安装sar:
+	apt-get install sysstat
+	gedit /etc/default/sysstat
+		----
+		# Should sadc collect system activity informations? Valid values
+		# are "true" and "false". Please do not put other values, they
+		# will be overwritten by debconf!
+		ENABLED="true"		//这个地方 false 改为 true
+		----
+	service sysstat restart
+	然后就可以使用 sar了
+sar -u 1 2	//查看CPU使用率, 每秒采样 1 次，总共采样2次
+	Linux 4.2.0-42-generic (kingders-ThinkPad-T420) 	2017年08月31日 	_x86_64_	(4 CPU)
+	17时36分42秒     CPU     %user     %nice   %system   %iowait    %steal     %idle
+	17时36分43秒     all      1.01      0.00      0.50      0.00      0.00     98.49
+	17时36分44秒     all      6.02      0.00      1.45      0.00      0.00     92.53
+	Average:        all      3.57      0.00      0.98      0.00      0.00     95.45
+sar -q 1 2	//查看CPU平均负载,查看运行队列中的进程数、系统上的进程大小、平均负载等,每秒采样 1 次，总共采样2次
+	Linux 4.2.0-42-generic (kingders-ThinkPad-T420) 	2017年08月31日 	_x86_64_	(4 CPU)
+	17时38分55秒   runq-sz  plist-sz   ldavg-1   ldavg-5  ldavg-15   blocked
+	17时38分56秒         0       618      0.02      0.08      0.08         0
+	17时38分57秒         0       618      0.02      0.08      0.08         0
+	Average:            0       618      0.02      0.08      0.08         0
+$sar -r 1 2	//查看内存使用状况 sar指定-r之后，可查看内存使用状况,每秒采样 1 次，总共采样2次
+	Linux 4.2.0-42-generic (kingders-ThinkPad-T420) 	2017年08月31日 	_x86_64_	(4 CPU)
+	17时41分59秒 kbmemfree kbmemused  %memused kbbuffers  kbcached  kbcommit   %commit  kbactive   kbinact   kbdirty
+	17时42分00秒   2964188   5091368     63.20    583428   1848604   6786232     17.27   2954104   1627220        28
+	17时42分01秒   2963816   5091740     63.21    583428   1848604   6786232     17.27   2954116   1627228        32
+	Average:      2964002   5091554     63.21    583428   1848604   6786232     17.27   2954110   1627224        30
+$free -m	//查看内存使用量
+$sar -W 1 3	//查询页面交换,
+		//查看页面交换发生状况 页面发生交换时，服务器的吞吐量会大幅下降；
+		//服务器状况不良时，如果怀疑因为内存不足而导致了页面交换的发生，可以使用sar -W这个命令来确认是否发生了大量的交换；
+$df -h		//查看磁盘空间利用情况
+du -sh  	//查询当前目录下空间使用情况,-h是人性化显示 s是递归整个目录的大小
+for i in `ls`; do du -sh $i; done | sort	//查看该目录下所有文件夹的排序后的大小
+du -sh `ls`	//也可以这样,查看该目录下所有文件夹的排序后的大小
+vmstat 1 3	//查看资源使用情况,与sar命令差不多,每秒采样 1 次，总共采样3次, 命令格式 vmstat n m (n 为监控频率、m为监控次数）
+	procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+	 r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+	 1  0 471012 2952980 583460 1844876    0    1    18   101   10   11 21  7 71  0  0
+	 0  0 471012 2952856 583460 1844940    0    0     0     0  235  716  1  0 99  0  0
+	 0  0 471012 2952856 583460 1844940    0    0     0     0  255  830  1  1 98  0  0
+watch -d -n 1 './redis-cli info | grep memory'	//操作redis时，监控内存变化
+						//使用watch 工具监控变化 当需要持续的监控应用的某个数据变化时，
+						//watch工具能满足要求； 执行watch命令后，会进入到一个界面，输出当前被监控的数据，
+						//一旦数据变化，便会高亮显示变化情况；
+						//(以下为watch工具中的界面内容，一旦内存变化，即实时高亮显示变化）
+	Every 1.0s: ./redis-cli info | grep memory                                                         Mon Apr 28 16:10:36 2014
+	used_memory:45157376
+	used_memory_human:43.07M
+	used_memory_rss:47628288
+	used_memory_peak:49686080
+	used_memory_peak_human:47.38M
+netstat -a	//列出所有端口 (包括监听和未监听的),netstat 命令用于显示各种网络相关信息，
+		//如网络连接，路由表，接口状态 (Interface Statistics)，masquerade 连接，多播成员 (Multicast Memberships) 等等。
+netstat -at	//列出所有 tcp 端口
+netstat -l	//列出所有有监听的服务状态
+使用netstat工具查询端口,及使用它的进程
+	$netstat -antp | grep 6379	
+	tcp        0      0 127.0.0.1:6379          0.0.0.0:*               LISTEN      25501/redis-server
+	$ps 25501
+  	PID  	TTY      STAT   TIME 	COMMAND
+	25501 	?        Ssl   28:21 	./redis-server ./redis.conf
+查询7902端口现在运行什么程序:
+	第一步,查询使用该端口的进程的PID；
+	$lsof -i:7902	//查到30294
+	COMMAND   PID   USER   FD   TYPE    DEVICE SIZE NODE NAME
+	WSL     30294 tuapp    4u  IPv4 447684086       TCP 10.6.50.37:tnos-dp (LISTEN)
+	第二步,使用ps工具查询进程详情：
+	$ps -fe | grep 30294
+	tdev5 	 30294 26160  0 Sep10 ?        01:10:50 tdesl -k 43476
+	root     22781 22698  0 00:54 pts/20   00:00:00 grep 11554
+$route -n	//查看路由状态
+$traceroute IP	//探测前往地址IP的路由路径	(测试不如意)
+$host domain	//DNS查询，寻找域名domain对应的IP:
+$host IP	//反向DNS查询			(IP要反写,例 192.168.1.12,要写成 12.1.168.192)
+wget url	//直接下载文件或者网页
+	常用选项:
+		–limit-rate :下载限速
+		-o：指定日志文件；输出都写入日志；
+		-c：断点续传
+ftp sftp lftp ssh
+	$ssh ID@host	//SSH登陆,ssh登陆远程服务器host，ID为用户名。
+	$sftp ID@host	//ftp/sftp文件传输,登陆服务器host，ID为用户名。sftp登陆后，可以使用下面的命令进一步操作：
+		get filename 	//下载文件
+		put filename 	//上传文件
+		ls 		//列出host上当前路径的所有文件
+		cd 		//在host上更改当前路径
+		lls 		//列出本地主机上当前路径的所有文件
+		lcd 		//在本地主机更改当前路径
+	lftp -u user:pass host		//lftp同步文件夹(类似rsync工具)
+	lftp user@host:~> mirror -n
+	$scp localpath ID@host:path	//将本地localpath指向的文件上传到远程主机的path路径
+	$scp -r ID@site:path localpath	//以ssh协议，遍历下载path路径下的整个文件系统，到本地的localpath
+环境变量:
+	bashrc与profile都用于保存用户的环境信息，bashrc用于交互式non-loginshell，而profile用于交互式login shell。
+	/etc/profile，/etc/bashrc 是系统全局环境变量设定
+	~/.profile，~/.bashrc用户目录下的私有环境变量设定
+	当登入系统获得一个shell进程时，其读取环境设置脚本分为三步:
+		首先读入的是全局环境变量设置文件/etc/profile，
+		然后根据其内容读取额外的文档，如/etc/profile.d和/etc/inputrc
+    		读取当前登录用户Home目录下的文件~/.bash_profile，
+		其次读取~/.bash_login，
+		然后读取~/.profile，
+		(~/.bash_profile,~/.bash_login,~/.profile这三个文档设定基本上是一样的，读取有优先关系
+		最后读取~/.bashrc
+	~/.profile与~/.bashrc的区别:
+		这两者都具有个性化定制功能
+		~/.profile可以设定本用户专有的路径，环境变量，等，它只能登入的时候执行一次
+		~/.bashrc也是某用户专有设定文档，可以设定路径，命令别名，每次shell script的执行都会使用它一次
+	补充:我们可以在这些环境变量中设置自己经常进入的文件路径，以及命令的快捷方式：
+		.bashrc
+		alias m='more'
+		alias cp='cp -i'
+		alias mv='mv -i'
+		alias ll='ls -l'
+		alias lsl='ls -lrt'
+		alias lm='ls -al|more'
+		
+		log=/opt/applog/common_dir
+		unit=/opt/app/unittest/common
+		
+		.bash_profile
+		. /opt/app/tuxapp/openav/config/setenv.prod.sh.linux
+		export PS1='$PWD#'
+		通过上述设置，我们进入log目录就只需要输入cd $log即可；
+查询系统版本
+	$uname -a		//查看Linux系统版本
+	$lsb_release -a		//查看Linux系统版本
+	$more /etc/release	//查看Unix系统版本：操作系统版本
+$cat /proc/meminfo	//查看内存信息
+$pagesize	//显示内存page大小（以KByte为单位）
+$arch		//显示架构
+$date		//显示当前系统时间
+设置系统日期和时间(格式为2014-09-15 17:05:00):	//设置系统时间需要root用户权限
+	$date -s 2014-09-15 17:05:00
+	$date -s 2014-09-15
+	$date -s 17:05:00
+	$date +%Y%m%d.%H%M%S	//格式化输出当前日期时间	
+		>20150512.173821
+IPC资源管理
+	$ipcs	//查看系统使用的IPC资源
+		------ Shared Memory Segments --------
+		key        shmid      owner      perms      bytes      nattch     status      
+		0x00000000 61833216   kingders   600        524288     2          dest         
+		0x00000000 950273     kingders   600        524288     2          dest         
+		0x00000000 262146     kingders   600        16777216   2                       
+		0x00000000 393219     kingders   600        524288     2          dest         
+		0x00000000 589828     kingders   600        524288     2          dest         
+		0x00000000 688133     kingders   600        524288     2          dest         
+		........
+		------ Semaphore Arrays --------
+		key        semid      owner      perms      nsems     
+		
+		------ Message Queues --------
+		key        msqid      owner      perms      used-bytes   messages  
+	$ipcs -m	//查看系统使用的IPC共享内存资源,	即 Shared Memory Segments
+	$ipcs -q	//查看系统使用的IPC队列资源,	即 Message Queues
+	$ipcs -s	//查看系统使用的IPC信号量资源,	即 Semaphore Arrays
+	应用示例：查看IPC资源被谁占用
+		有个IPCKEY：51036 ，需要查询其是否被占用；
+        	51036 -> c75c	//首先通过计算器将其转为十六进制
+		$ipcs -m | grep c75c	//如果知道是被共享内存占用
+   			0x0000c75c 40403197   tdea3    666        536870912  2
+		$ipcs | grep c75c	//如果不确定，则直接查找
+			0x0000c75c 40403197   tdea3    666        536870912  2
+			0x0000c75c 5079070    tdea3    666        4
+检测和设置系统资源限制 (未测试过)
+	ulimit – a	//显示当前所有的系统资源limit 信息
+	ulimit – c unlimited	//对生成的 core 文件的大小不进行限制:
+
+
+
+
+
+
+
+
+20170901
+linux程序调试,
+gdb 简单调试例子
+	$gdb programmer     //启动gdb
+	>break main         //设置断点
+	>run                //运行调试程序
+	>next               //单步调试
+	>print var1         //在调试过程中，我们需要查看当前某个变量值的时候，使用print 命令打印该值
+	>list               //显示当前调试处的源代码
+	>info b             //显示当前断点设置情况
+$pstrack <program-pid>	//pstack是一个脚本工具，可显示每个进程的栈跟踪。
+			//pstack 命令必须由相应进程的属主或 root 运行。其核心实现就是使用了gdb以及thread apply all bt命令;
+	示例:
+	$ pstack 4551	
+		Thread 7 (Thread 1084229984 (LWP 4552)):
+	#0  0x000000302afc63dc in epoll_wait () from /lib64/tls/libc.so.6
+	#1  0x00000000006f0730 in ub::EPollEx::poll ()
+	#2  0x00000000006f172a in ub::NetReactor::callback ()
+	#3  0x00000000006fbbbb in ub::UBTask::CALLBACK ()
+	#4  0x000000302b80610a in start_thread () from /lib64/tls/libpthread.so.0
+	#5  0x000000302afc6003 in clone () from /lib64/tls/libc.so.6
+	#6  0x0000000000000000 in ?? ()
+strace -o output.txt -T -tt -e trace=all -p 28979	//跟踪28979进程的所有系统调用（-e trace=all），
+							//并统计系统调用的花费时间，以及开始时间（以可视化的时分秒格式显示），
+							//最后将记录结果存在output.txt文件里面。
+							//strace常用来跟踪进程执行时的系统调用和所接收的信号。
+							//在Linux世界，进程不能直接访问硬件设备，
+							//当进程需要访问硬件设备(比如读取磁盘文件，接收网络数据等等)时，
+							//必须由用户态模式切换至内核态模式，通过系统调用访问硬件设备。
+							//strace可以跟踪到一个进程产生的系统调用,包括参数，返回值，执行消耗的时间。
+$strace -p <process-pid>	//查看进程正在做什么(实时输出进程执行系统调用的情况)
+$nm myProgrammer		//nm用来列出目标文件的符号清单
+	08049f28 d _DYNAMIC
+	08049ff4 d _GLOBAL_OFFSET_TABLE_
+	080484dc R _IO_stdin_used
+	         w _Jv_RegisterClasses
+	08049f18 d __CTOR_END__
+	08049f14 d __CTOR_LIST__
+	08049f20 D __DTOR_END__
+	08049f1c d __DTOR_LIST__
+	.....
+	这些包含可执行代码的段称为正文段,数据段包含了不可执行的信息或数据.BSS 段包含以符号数据开头的块。
+	对于 nm 命令列出的每个符号，它们的值使用十六进制来表示（缺省行为），并且在该符号前面加上了一个表示符号类型的编码字符。
+	常见的各种编码包括：
+		A 表示绝对 (absolute)，这意味着不能将该值更改为其他的连接；
+		B 表示 BSS 段中的符号；
+		C 表示引用未初始化的数据的一般符号。
+$objdump -d myprogrammer	//ogjdump工具用来显示二进制文件的信息，就是以一种可阅读的格式让你更多地了解二进制文件可能带有的附加信息。
+	a.out:     file format elf32-i386
+	Disassembly of section .init:
+	080482b4 <_init>:
+	 80482b4:   53                      push   %ebx
+	 80482b5:   83 ec 08                sub    $0x8,%esp
+	 80482b8:   e8 00 00 00 00          call   80482bd <_init+0x9>
+	 80482bd:   5b                      pop    %ebx
+	 80482be:   81 c3 37 1d 00 00       add    $0x1d37,%ebx
+	 80482c4:   8b 83 fc ff ff ff       mov    -0x4(%ebx),%eax
+	 80482ca:   85 c0                   test   %eax,%eax
+	 80482cc:   74 05                   je     80482d3 <_init+0x1f>
+	 80482ce:   e8 3d 00 00 00          call   8048310 <__gmon_start__@plt>
+	 80482d3:   e8 e8 00 00 00          call   80483c0 <frame_dummy>
+	 80482d8:   e8 b3 01 00 00          call   8048490 <__do_global_ctors_aux>
+	 80482dd:   83 c4 08                add    $0x8,%esp
+	 80482e0:   5b                      pop    %ebx
+	 80482e1:   c3                      ret	
+	Disassembly of section .plt:
+	...
+	//每个可执行代码段将在需要特定的事件时执行，这些事件包括库的初始化和该程序本身主入口点。
+	//该工具，可用于研究编译器和汇编器的输出。细节信息，比如这段代码中所显示的这些信息，
+	//可以揭示有关本地处理器本身运行方式的很多内容。对该处理器制造商提供的技术文档进行深入的研究，您可以收集关于一些有价值的信息，
+	//通过这些信息可以深入地了解内部的运行机制，因为功能程序提供了清晰的输出。
+$readelf -all a.out	//这个工具和objdump命令提供的功能类似，但是它显示的信息更为具体，
+			//并且它不依赖BFD库(BFD库是一个GNU项目，它的目标就是希望通过一种统一的接口来处理不同的目标文件）
+	ELF Header:
+	  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+	  Class:                             ELF32
+	  Data:                              2's complement, little endian
+	  Version:                           1 (current)
+	  OS/ABI:                            UNIX - System V
+	  ABI Version:                       0
+	  Type:                              EXEC (Executable file)
+	  Machine:                           Intel 80386
+	  Version:                           0x1
+	  Entry point address:               0x8048330
+	  Start of program headers:          52 (bytes into file)
+	  Start of section headers:          4412 (bytes into file)
+	  Flags:                             0x0
+	  Size of this header:               52 (bytes)
+	  Size of program headers:           32 (bytes)
+	  Number of program headers:         9
+	  Size of section headers:           40 (bytes)
+	  Number of section headers:         30
+	  Section header string table index: 27	
+	Section Headers:
+	  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+	  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+	  [ 1] .interp           PROGBITS        08048154 000154 000013 00   A  0   0  1
+	  [ 2] .note.ABI-tag     NOTE            08048168 000168 000020 00   A  0   0  4
+	  [ 3] .note.gnu.build-i NOTE            08048188 000188 000024 00   A  0   0  4
+	  [ 4] .gnu.hash         GNU_HASH        080481ac 0001ac 000020 04   A  5   0  4
+	  [ 5] .dynsym           DYNSYM          080481cc 0001cc 000050 10   A  6   1  4
+	  [ 6] .dynstr           STRTAB          0804821c 00021c 00004c 00   A  0   0  1
+	  [ 7] .gnu.version      VERSYM          08048268 000268 00000a 02   A  5   0  2
+	  [ 8] .gnu.version_r    VERNEED         08048274 000274 000020 00   A  6   1  4
+	  [ 9] .rel.dyn          REL             08048294 000294 000008 08   A  5   0  4
+	  [10] .rel.plt          REL             0804829c 00029c 000018 08   A  5  12  4
+	  [11] .init             PROGBITS        080482b4 0002b4 00002e 00  AX  0   0  4
+	  [12] .plt              PROGBITS        080482f0 0002f0 000040 04  AX  0   0 16
+	  [13] .text             PROGBITS        08048330 000330 00018c 00  AX  0   0 16
+	  [14] .fini             PROGBITS        080484bc 0004bc 00001a 00  AX  0   0  4
+	  [15] .rodata           PROGBITS        080484d8 0004d8 000011 00   A  0   0  4
+	  [16] .eh_frame_hdr     PROGBITS        080484ec 0004ec 000034 00   A  0   0  4
+	  [17] .eh_frame         PROGBITS        08048520 000520 0000c4 00   A  0   0  4
+	  [18] .ctors            PROGBITS        08049f14 000f14 000008 00  WA  0   0  4
+	  [19] .dtors            PROGBITS        08049f1c 000f1c 000008 00  WA  0   0  4
+	  [20] .jcr              PROGBITS        08049f24 000f24 000004 00  WA  0   0  4
+	  [21] .dynamic          DYNAMIC         08049f28 000f28 0000c8 08  WA  6   0  4
+	  [22] .got              PROGBITS        08049ff0 000ff0 000004 04  WA  0   0  4
+	  [23] .got.plt          PROGBITS        08049ff4 000ff4 000018 04  WA  0   0  4
+	  [24] .data             PROGBITS        0804a00c 00100c 000008 00  WA  0   0  4
+	  [25] .bss              NOBITS          0804a014 001014 000008 00  WA  0   0  4
+	  [26] .comment          PROGBITS        00000000 001014 00002a 01  MS  0   0  1
+	  [27] .shstrtab         STRTAB          00000000 00103e 0000fc 00      0   0  1
+	  [28] .symtab           SYMTAB          00000000 0015ec 000410 10     29  45  4
+	  [29] .strtab           STRTAB          00000000 0019fc 0001f9 00      0   0  1
+	  ...
+	//ELF Header 为该文件中所有段入口显示了详细的摘要。在列举出这些 Header 中的内容之前，您可以看到 Header 的具体数目。
+	//在研究一个较大的目标文件时，该信息可能非常有用。
+	//除了所有这些段之外，编译器可以将调试信息放入到目标文件中，并且还可以显示这些信息。
+$readelf --debug-dump a.out | more	//这命令，可帮助仔细分析编译器的输出
+					//调试工具，如 GDB，可以读取这些调试信息，并且当程序在调试器中运行的同时，
+					//可以使用该工具显示更具描述性的标记，而不是对代码进行反汇编时的原始地址值。
+$size a.out	//查看程序运行时各个段的实际内存占用
+	text           data     bss     dec     hex filename
+	1146            256       8    1410     582 a.out
+$file a.out	//查看文件的类型,比如我们在64位机器上发现了一个32位的库，链接不上，这就有问题了
+	a.out: ELF 64-bit LSB executable, AMD x86-64, version 1 (SYSV), for GNU/Linux 2.6.9, dynamically linked (uses shared libs),
+	for GNU/Linux 2.6.9, not stripped
+$file core.22355	//查看Core文件是由哪个程序生成
+$strings <objfile>	//查询数据中的文本信息,一个文件中包含二进制数据和文本数据，
+			//如果只需要查看其文本信息，使用这个命令就很方便；过滤掉非字符数据，将文本信息输出:
+$fuser -m -u redis-server	//显示 redis-server的使用者,fuser显示所有正在使用着指定的file, file system 或者 sockets的进程信息;
+	redis-server: 11552rce(weber) 22912rce(weber) 25501rce(weber)
+	//使用了-m和-u选项，用来查找所有正在使用redis-server的所有进程的PID以及该进程的OWNER；
+$fuser –k /path/to/your/filename	//fuser通常被用在诊断系统的”resource busy”问题。
+					//如果想kill所有正在使用某一指定的file, file system or sockets的进程时，可使用-k选项
+$xxd a.out	以十六进制方式显示文件，只显示文本信息:
+	0000000: 7f45 4c46 0101 0100 0000 0000 0000 0000  .ELF............
+	0000010: 0200 0300 0100 0000 3083 0408 3400 0000  ........0...4...
+	0000020: 3c11 0000 0000 0000 3400 2000 0900 2800  <.......4. ...(.
+	0000030: 1e00 1b00 0600 0000 3400 0000 3480 0408  ........4...4...
+	0000040: 3480 0408 2001 0000 2001 0000 0500 0000  4... ... .......
+	0000050: 0400 0000 0300 0000 5401 0000 5481 0408  ........T...T...
+	...
+$od -Ax -tcx4 a.c	//以十六进制和字符同时显示,
+	000000   #   i   n   c   l   u   d   e       <   s   t   d   i   o   .
+	              636e6923        6564756c        74733c20        2e6f6964
+	000010   h   >  \n  \n   v   o   i   d       m   a   i   n   (   )  \n
+	              0a0a3e68        64696f76        69616d20        0a29286e
+	000020   {  \n  \t   i   n   t       i       =       5   ;  \n  \t   p
+	              69090a7b        6920746e        35203d20        70090a3b
+	000030   r   i   n   t   f   (   "   h   e   l   l   o   ,   %   d   "
+	              746e6972        68222866        6f6c6c65        2264252c
+	000040   ,   i   )   ;  \n   }  \n
+	              3b29692c        000a7d0a
+	000047
+$od -c a.c	//以字符方式显示
+	0000000   #   i   n   c   l   u   d   e       <   s   t   d   i   o   .
+	0000020   h   >  \n  \n   v   o   i   d       m   a   i   n   (   )  \n
+	0000040   {  \n  \t   i   n   t       i       =       5   ;  \n  \t   p
+	0000060   r   i   n   t   f   (   "   h   e   l   l   o   ,   %   d   "
+	0000100   ,   i   )   ;  \n   }  \n
+	0000107
+	//类似命令还有hexdump（十六进制输出）
+	//通常使用od命令查看特殊格式的文件内容。通过指定该命令的不同选项可以以十进制、八进制、十六进制和ASCII码来显示文件。
+	//参数说明：
+	//-A 指定地址基数:			-t 指定数据的显示格式，主要的参数有：
+	//	d 十进制				c ASCII字符或反斜杠序列
+	//	o 八进制（系统默认值）			d 有符号十进制数
+	//	x 十六进制				f 浮点数
+	//	n 不打印位移值				o 八进制（系统默认值为02）
+	//						u 无符号十进制数
+	//						x 十六进制数
+	//						(除了选项c以外的其他选项后面都可以跟一个十进制数n，指定每个显示值所包含的字节数)
+	//od命令系统默认的显示方式是八进制，这也是该命令的名称由来（Octal Dump）。
+	//但这不是最有用的显示方式，用ASCII码和十六进制组合的方式能提供更有价值的信息输出。
+linux程序性能优化
+$top	//系统响应变慢，首先得定位大致的问题出在哪里，是IO瓶颈、CPU瓶颈、内存瓶颈还是程序导致的系统问题；
+	top - 09:14:56 up 264 days, 20:56,  1 user,  load average: 0.02, 0.04, 0.00
+	Tasks:  87 total,   1 running,  86 sleeping,   0 stopped,   0 zombie
+	Cpu(s):  0.0%us,  0.2%sy,  0.0%ni, 99.7%id,  0.0%wa,  0.0%hi,  0.0%si,  0.2%st
+	Mem:    377672k total,   322332k used,    55340k free,    32592k buffers
+	Swap:   397308k total,    67192k used,   330116k free,    71900k cached
+	PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+	1 root      20   0  2856  656  388 S  0.0  0.2   0:49.40 init
+	2 root      20   0     0    0    0 S  0.0  0.0   0:00.00 kthreadd
+	3 root      20   0     0    0    0 S  0.0  0.0   7:15.20 ksoftirqd/0
+	4 root      RT   0     0    0    0 S  0.0  0.0   0:00.00 migration/
+	......
+	进入交互模式后:
+		输入M，进程列表按内存使用大小降序排序，便于我们观察最大内存使用者使用有问题（检测内存泄漏问题）;
+		输入P，进程列表按CPU使用大小降序排序，便于我们观察最耗CPU资源的使用者是否有问题；
+	top第三行显示当前系统的，其中有两个值很关键:
+		%id：空闲CPU时间百分比，如果这个值过低，表明系统CPU存在瓶颈；
+		%wa：等待I/O的CPU时间百分比，如果这个值过高，表明IO存在瓶颈；
+free	//查看内存是否存在瓶颈，使用top指令看比较麻烦，而free命令更为直观:
+	             total       used       free     shared    buffers     cached
+	Mem:        501820     452028      49792      37064       5056     136732
+	-/+ buffers/cache:     310240     191580
+	Swap:            0          0          0
+	//如果是因为缺少内存，系统响应变慢很明显，因为这使得系统不停的做换入换出的工作;
+	//进一步的监视内存使用情况，可使用vmstat工具，实时动态监视操作系统的内存和虚拟内存的动态变化.
+	//Linux上的free命令详解 http://www.cnblogs.com/coldplayerest/archive/2010/02/20/1669949.html
+iostat -d -x -k 1 1	//使用iostat工具分析IO瓶颈,如果IO存在性能瓶颈，top工具中的%wa会偏高；
+	Linux 2.6.32-279.el6.x86_64 (colin)   07/16/2014      _x86_64_        (4 CPU)
+	Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await  svctm  %util
+	sda               0.02     7.25    0.04    1.90     0.74    35.47    37.15     0.04   19.13   5.58   1.09
+	dm-0              0.00     0.00    0.04    3.05     0.28    12.18     8.07     0.65  209.01   1.11   0.34
+	dm-1              0.00     0.00    0.02    5.82     0.46    23.26     8.13     0.43   74.33   1.30   0.76
+	dm-2              0.00     0.00    0.00    0.01     0.00     0.02     8.00     0.00    5.41   3.28   0.00
+	//如果%iowait的值过高，表示硬盘存在I/O瓶颈。
+	//如果 %util 接近 100%，说明产生的I/O请求太多，I/O系统已经满负荷，该磁盘可能存在瓶颈。
+	//如果 svctm 比较接近 await，说明 I/O 几乎没有等待时间；
+	//如果 await 远大于 svctm，说明I/O 队列太长，io响应太慢，则需要进行必要优化。
+	//如果avgqu-sz比较大，也表示有大量io在等待。
+3.4. 分析进程调用
+查看bash程序进程栈:
+	/opt/app/tdev1$ps -fe| grep bash
+		tdev1   7013  7012  0 19:42 pts/1    00:00:00 -bash
+		tdev1  11402 11401  0 20:31 pts/2    00:00:00 -bash
+		tdev1  11474 11402  0 20:32 pts/2    00:00:00 grep bash
+	/opt/app/tdev1$pstack 7013
+		#0  0x00000039958c5620 in __read_nocancel () from /lib64/libc.so.6
+		#1  0x000000000047dafe in rl_getc ()
+		#2  0x000000000047def6 in rl_read_key ()
+		#3  0x000000000046d0f5 in readline_internal_char ()
+		#4  0x000000000046d4e5 in readline ()
+		#5  0x00000000004213cf in ?? ()
+		#6  0x000000000041d685 in ?? ()
+		#7  0x000000000041e89e in ?? ()
+		#8  0x00000000004218dc in yyparse ()
+		#9  0x000000000041b507 in parse_command ()
+		#10 0x000000000041b5c6 in read_command ()
+		#11 0x000000000041b74e in reader_loop ()
+		#12 0x000000000041b2aa in main ()
+		...
+		//pstack用来跟踪进程栈，这个命令在排查进程问题时非常有用，
+		//比如我们发现一个服务一直处于work状态（如假死状态，好似死循环），使用这个命令就能轻松定位问题所在；
+		//可以在一段时间内，多执行几次pstack，若发现代码栈总是停在同一个位置，那个位置就需要重点关注，很可能就是出问题的地方；
+优化程序建议采用以下准则:
+	二八法则：
+		在任何一组东西中，最重要的只占其中一小部分，约20%，其余80%的尽管是多数，却是次要的；
+		在优化实践中，我们将精力集中在优化那20%最耗时的代码上，整体性能将有显著的提升；
+		函数A虽然代码量大，但在一次正常执行流程中，只调用了一次。
+		而另一个函数B代码量比A小很多，但被调用了1000次。显然，我们更应关注B的优化。
+	编完代码，再优化；
+		编码的时候总是考虑最佳性能未必总是好的；在强调最佳性能的编码方式的同时，可能就损失了代码的可读性和开发效率；
+
+gprof使用步骤,参考(C++的性能优化实践 http://www.cnblogs.com/me115/archive/2013/06/05/3117967.html)
+	g++ -pg -o test.exe test.cpp	//用gcc、g++、xlC编译程序时，使用-pg参数
+					//编译器会自动在目标代码中插入用于性能测试的代码片断，
+					//这些代码在程序运行时采集并记录函数的调用关系和调用次数，
+					//并记录函数自身执行时间和被调用函数的执行时间
+	./test.exe	//执行编译后的可执行程序,该步骤运行程序的时间会稍慢于正常编译的可执行程序的运行时间
+			//程序运行结束后，会在程序所在路径下生成一个缺省文件名为gmon.out的文件，
+			//这个文件就是记录程序运行的性能、调用关系、调用次数等信息的数据文件。
+	gprof test.exe gmon.out		//使用gprof命令来分析记录程序运行信息的gmon.out文件,生成结果报告输出到屏幕上
+					//可以看到函数调用相关的统计、分析信息。
+	gprof test.exe gmon.out> gprofresult.txt	// 生成的结果报告 重定向到文本文件以便于后续分析。
+其它工具
+	valgrind	//调试内存泄漏的工具
+	OProfile	//Linux 平台上的一个功能强大的性能分析工具 参考 http://www.ibm.com/developerworks/cn/linux/l-oprof/
+	sar		//关于sar的使用,看之前介绍!!
+
+
+
+
+
+
+
+
+20170906
+django 开发 地图网游太难,可能只能当后端,模糊搜索后发现应该要使用html5
+html5 webgame 学习:	
+	写一个测试网页,测试html5众多功能,
+	把下述一个简单html 写到 gedit文本编辑器,然后保存为 test.html 且是 utf-8 编码格式保存!!
+	(注意,不要用win自带txt编辑器,因为保存时,编辑器默认以ANSI编码格式保存)
+	然后使用firefox直接打开可以看效果!!
+	(test.html用到的各种资源都放在同目录的:/home/kingders/other/html5_learn里)
+/*test.html start*/
+<!DOCTYPE html>
+<html manifest="demo_html.appcache">
+<!-- 加 manifest 表示，告诉浏览器保存 脱机页面到demo_html.appcache 文件里 -->
+<head>
+	<!-- html注释符号长这样,上面的是修复 -->
+	<meta charset="utf-8"> 
+	<title>菜鸟教程(runoob.com)</title> 
+	<meta charset="utf-8">
+	<title>渲染 HTML5</title>
+	<!--[if lt IE 9]>
+	<script src="https://apps.bdimg.com/libs/html5shiv/3.7/html5shiv.min.js"></script>
+	<![endif]-->
+	<!-- 上面是一段代码注释,但又可以修复 ie9 不支持html5 的问题,先不探究为啥一段注释还能起这种作用,暂时只知道是说什么Shiv 解决方案而已 -->
+
+	<!-- 定义了一种格式style -->
+	<script>document.createElement("myHero")</script>
+	<style>
+	myHero {
+		display: block;
+		background-color: #ddd;
+		padding: 50px;
+		font-size: 30px;
+	} 
+	</style>
+
+	<!-- 拖放功能示例预设置 定义了俩个格式框 div1，div2，还有一些功能函数-->
+	<style type="text/css">
+		#div1, #div2
+		{float:left; width:100px; height:35px; margin:10px;padding:10px;border:1px solid #aaaaaa;}
+	</style>
+	<script>
+		function allowDrop(ev)		
+		{
+			ev.preventDefault();
+		}		
+		function drag(ev)
+		{
+			ev.dataTransfer.setData("Text",ev.target.id); //数据类型是 "Text"，值是可拖动元素的 id ("drag1")
+		}
+		function drop(ev)
+		{
+			ev.preventDefault();
+			var data=ev.dataTransfer.getData("Text");
+			ev.target.appendChild(document.getElementById(data));
+		}
+		//调用 preventDefault() 来避免浏览器对数据的默认处理（drop 事件的默认行为是以链接形式打开）
+		//通过 dataTransfer.getData("Text") 方法获得被拖的数据。该方法将返回在 setData() 方法中设置为相同类型的任何数据。
+		//被拖数据是被拖元素的 id ("drag1")
+		//把被拖元素追加到放置元素（目标元素）中
+	</script>
+
+	<!-- web 存储 -->
+	<script>
+	function clickCounter_localstorage()
+	{
+		if(typeof(Storage)!=="undefined")
+		{
+			if (localStorage.clickcount)
+			{
+				localStorage.clickcount=Number(localStorage.clickcount)+1;
+			}
+			else
+			{
+				localStorage.clickcount=1;
+			}
+			document.getElementById("result1").innerHTML=" 你已经点击了按钮 " + localStorage.clickcount + " 次 ";
+		}
+		else
+		{
+			document.getElementById("result1").innerHTML="对不起，您的浏览器不支持 web 存储。";
+		}
+	}
+	function clickCounter_seesionstorage()
+	{
+		if(typeof(Storage)!=="undefined")
+		{
+			if (sessionStorage.clickcount)
+			{
+				sessionStorage.clickcount=Number(sessionStorage.clickcount)+1;
+			}
+			else
+			{
+				sessionStorage.clickcount=1;
+			}
+			document.getElementById("result2").innerHTML="在这个会话中你已经点击了该按钮 " + sessionStorage.clickcount + " 次 ";
+		}
+		else
+		{
+			document.getElementById("result2").innerHTML="抱歉，您的浏览器不支持 web 存储";
+		}
+	}
+	</script>
+</head>
+
+
+<body>	
+	<!--导入图片资源-->
+	<p>使用的图片资源:</p>
+	<img id="scream" src="monai.jpg" alt="The Scream" width="220" height="277">
+	
+	<p>Canvas:</p>
+	<!--分配CANVAS 画板1-->
+	<canvas id="myCanvas" width="200" height="100" style="border:1px solid #d3d3d3;">	
+	您的浏览器不支持 HTML5 canvas 标签。</canvas>
+	<!--分配CANVAS 画板2-->
+	<canvas id="myCanvas2" width="200" height="100" style="border:1px solid #d3d3d3;">	
+	您的浏览器不支持 HTML5 canvas 标签。</canvas>
+	<!--分配CANVAS 画板3-->
+	<canvas id="myCanvas3" width="200" height="100" style="border:1px solid #d3d3d3;">	
+	您的浏览器不支持 HTML5 canvas 标签。</canvas>
+	<!--分配CANVAS 画板4-->
+	<canvas id="myCanvas4" width="250" height="300" style="border:1px solid #d3d3d3;">
+	您的浏览器不支持 HTML5 canvas 标签。</canvas>	
+
+
+	<h1>我的第一篇文章</h1>
+
+	<article>
+	菜鸟教程 —— 学的不仅是技术，更是梦想！！！
+	</article>
+
+	<myHero>myHero 格式 示范 </myHero>
+
+	<script>
+	//javascript注释符长这样
+	//使用画板1
+	var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");	
+	//画对角线
+	ctx.moveTo(0,0);	
+	ctx.lineTo(200,100);
+	ctx.stroke();
+	//画圆
+	ctx.beginPath();
+	ctx.arc(95,50,40,0,2*Math.PI);	//arc(x,y,r,start,stop)  画布的左上角坐标为0,0 
+					//x：圆心在x轴上的坐标,y：圆心在y轴上的坐标,r：半径长度,start：起始角度，圆心平行的右端为0度,stop：结束角度,
+					//Math.PI表示180°，画圆的方向是顺时针
+	ctx.stroke();
+	//绘制文本
+	ctx.font="30px Arial";
+	ctx.fillText("Hello World",10,50);
+
+	//使用画板2
+	var c=document.getElementById("myCanvas2");
+	var ctx=c.getContext("2d");
+	// 创建渐变
+	var grd=ctx.createLinearGradient(0,0,200,0);
+	grd.addColorStop(0,"green");
+	grd.addColorStop(1,"yellow");
+	// 填充渐变
+	ctx.fillStyle=grd;
+	ctx.fillRect(10,10,150,80);
+
+	//使用画板2
+	var c=document.getElementById("myCanvas3");
+	var ctx=c.getContext("2d");
+	// 创建渐变
+	var grd=ctx.createRadialGradient(75,50,5,90,60,100);
+	grd.addColorStop(0,"red");
+	grd.addColorStop(1,"white");	 
+	// 填充渐变
+	ctx.fillStyle=grd;
+	ctx.fillRect(10,10,150,80);
+
+	//使用画板4 插入图片
+	var c=document.getElementById("myCanvas4");
+	var ctx=c.getContext("2d");
+	var img=document.getElementById("scream");
+	img.onload = function() {
+		ctx.drawImage(img,10,10);
+	} 
+	</script>
+
+	<!--画一张SVG 矢量图片-->
+	<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="190">
+		<!-- svg 里的注释符号与html一样 -->
+		<!-- http://www.w3.org/2000/svg 是引用svg功能的接口网址 -->	
+		<polygon points="100,10 40,180 190,60 10,60 160,180"
+		style="fill:lime;stroke:purple;stroke-width:5;fill-rule:evenodd;"/>
+	</svg>
+
+	<!--MathML 数学式子 显示-->
+ 	<math xmlns="http://www.w3.org/1998/Math/MathML">
+		<!-- MathML 里的注释符号与html一样 -->
+		<!-- http://www.w3.org/1998/Math/MathML 是引用mathml功能的接口网址 -->
+		<p>式子1:</p>
+		<mrow>
+			<msup><mi>a</mi><mn>2</mn></msup>
+			<mo>+</mo>
+			
+			<msup><mi>b</mi><mn>2</mn></msup>
+			<mo>=</mo>
+			
+			<msup><mi>c</mi><mn>2</mn></msup>
+		</mrow>
+		<p>式子2:</p>
+		<mrow>			
+			<mrow>
+				<msup>
+					<mi>x</mi>
+					<mn>2</mn>
+				</msup>
+				<mo>+</mo>
+				<mrow>
+					<mn>4</mn>
+					<mo>⁢</mo>
+					<mi>x</mi>
+				</mrow>
+				<mo>+</mo>
+				<mn>4</mn>
+				</mrow>
+					<mo>=</mo>
+				<mn>0</mn>
+			</mrow>
+		</mrow>
+		<!-- 矩阵显示不出来，先不追究 -->
+		<p>矩阵:</p>
+		<mrow>
+			<mi>A</mi>
+			<mo>=</mo>
+			<mfenced open="[" close="]">
+				<mtable>
+					<mtr>
+						<mtd><mi>x</mi></mtd>
+						<mtd><mi>y</mi></mtd>
+					</mtr>
+					<mtr>
+						<mtd><mi>z</mi></mtd>
+						<mtd><mi>w</mi></mtd>
+					</mtr>
+				</mtable>
+			</mfenced>
+		</mrow>
+	</math>
+
+	<!--拖放示例-->
+	<p>拖放例子</p>
+	<p>div1-------------------div2</p>
+	<div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)">
+		<img src="img_w3slogo.gif" draggable="true" ondragstart="drag(event)" id="drag1" width="88" height="31"></div>
+			<!-- draggable="true" 设置元素可拖放 -->
+			<!-- 可拖动元素的 id "drag1" -->
+	<div id="div2" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+	
+	<!-- 设置了三行隔行 -->
+	<br>
+	<br>
+	<br>
+
+	<!--video 及 DOM 控制示例-->
+	<p>视频及控制示例</p>
+	<div style="text-align:center"> 
+		<button onclick="playPause()">播放/暂停</button> 
+		<button onclick="makeBig()">放大</button>
+		<button onclick="makeSmall()">缩小</button>
+		<button onclick="makeNormal()">普通</button>
+		<br>
+		<video id="video1" width="320" height="240" controls>
+			<source src="movie.mp4" type="video/mp4">
+			<source src="movie.ogg" type="video/ogg">
+			<!-- 可惜不知道怎么获取 movie.ogg 音频文件 所以并没有成功展示ogg音频效果-->
+			您的浏览器不支持 HTML5 video 标签。
+		</video>
+	</div> 
+	<script> 
+		var myVideo=document.getElementById("video1"); 
+		function playPause()
+		{ 
+			if (myVideo.paused) 
+			  myVideo.play(); 
+			else 
+			  myVideo.pause(); 
+		} 
+		
+			function makeBig()
+		{ 
+			myVideo.width=560; 
+			myVideo.height=420; 
+		} 
+		
+			function makeSmall()
+		{ 
+			myVideo.width=176; 
+			myVideo.height=144; 
+		} 
+		
+			function makeNormal()
+		{ 
+			myVideo.width=320; 
+			myVideo.height=240;
+		} 
+	</script> 
+
+	<!-- audio示例 -->
+	<p>音频及控制示例</p>
+	<audio controls>
+		<source src="horse.ogg" type="audio/ogg">
+		<source src="horse.mp3" type="audio/mpeg">
+		<!-- 获取了 horse.ogg 音频文件-->
+		<!-- 没有获取了 horse.mp3 音频文件 所以并没有成功展示mp3音频效果-->
+		您的浏览器不支持 audio 元素。
+	</audio>
+
+	<!-- 表单 例子 -->
+	<p>input示例</p>
+	<!--注意，并没有demo-form.php 这个文件，这个文件主要是对输入参数后续处理，但不影响input演示 -->
+	<form action="demo-form.php">选择你喜欢的颜色: <input type="color" name="favcolor"><input type="submit"></form>
+	<form action="demo-form.php">生日: <input type="date" name="bday"><input type="submit"></form>
+	<form action="demo-form.php">生日 (日期和时间): <input type="datetime" name="bdaytime"><input type="submit"></form>
+	<form action="demo-form.php">生日-local (日期和时间): <input type="datetime-local" name="bdaytime"><input type="submit"></form>
+	<form action="demo-form.php">E-mail: <input type="email" name="email"><input type="submit"></form>
+	<form action="demo-form.php">生日 (月和年): <input type="month" name="bdaymonth"><input type="submit"></form>
+	<form action="demo-form.php">数量 ( 1 到 5 之间 ): <input type="number" name="quantity" min="1" max="5"><input type="submit"></form>
+	<form action="demo-form.php" method="get">Points: <input type="range" name="points" min="1" max="10"><input type="submit"></form>
+	<form action="demo-form.php">Search Google: <input type="search" name="googlesearch"><input type="submit"></form>
+	<form action="demo-form.php">电话号码: <input type="tel" name="usrtel"><input type="submit"></form>
+	<form action="demo-form.php">选择时间: <input type="time" name="usr_time"><input type="submit"></form>
+	<form action="demo-form.php">添加您的主页: <input type="url" name="homepage"><input type="submit"></form>
+	<form action="demo-form.php">选择周: <input type="week" name="week_year"><input type="submit"></form>
+	<form action="demo-form.php" method="get">下拉表单示例：<input list="browsers" name="browser">
+		<datalist id="browsers">
+			<option value="Internet Explorer">
+			<option value="Firefox">
+			<option value="Chrome">
+			<option value="Opera">
+			<option value="Safari">
+		</datalist>
+		<input type="submit">
+	</form>
+	<!--	<keygen> 元素的作用是提供一种验证用户的可靠方法。
+		<keygen>标签规定用于表单的密钥对生成器字段。
+		当提交表单时，会生成两个键，一个是私钥，一个公钥。
+		私钥（private key）存储于客户端，公钥（public key）则被发送到服务器。公钥可用于之后验证用户的客户端证书（client certificate）
+	-->
+	<p>keygen 示例</p>
+	<form action="demo_keygen.php" method="get">
+		用户名: <input type="text" name="usr_name">
+		加密: <keygen name="security">
+		<input type="submit">
+	</form>
+	<!-- output> 元素示例-->
+	<p>output示例</p>
+	<form oninput="x.value=parseInt(a.value)+parseInt(b.value)">0
+		<input type="range" id="a" value="50">100
+		+<input type="number" id="b" value="50">
+		=<output name="x" for="a b"></output>
+	</form>
+
+	<!-- html5 语义元素 测试 -->
+	<!-- 	语义元素来明确一个Web页面的不同部分
+			《header》
+		-------------------------
+			《nav》
+		-------------------------
+		《section》	|《aside》
+		----------------|
+		《article》	|
+		-------------------------
+			《footer》
+	-->
+	<!-- 然而实在不知道如何展示aside 部分 -->
+	<header>
+		<h1> hender </h1>
+		<p><time pubdate datetime="2011-03-15"></time></p>
+	</header>
+	<nav>
+		<a href="/html/">HTML</a> |
+		<a href="/css/">CSS</a> |
+		<a href="/js/">JavaScript</a> |
+		<a href="/jquery/">jQuery</a>
+	</nav>
+	<section>
+		<h1>section1：WWF</h1>
+		<p>The World Wide Fund for Nature (WWF) is an international organization working on issues regarding the conservation, research and restoration of the environment, formerly named the World Wildlife Fund. WWF was founded in 1961.</p>
+	</section>
+	<section>
+		<h1>section2：WWF's Panda symbol</h1>
+		<p>The Panda has become the symbol of WWF. The well-known panda logo of WWF originated from a panda named Chi Chi that was transferred from the Beijing Zoo to the London Zoo in the same year of the establishment of WWF.</p>
+	</section>
+	<article>
+		<h1>article</h1>
+		<p> Windows Internet Explorer 9(缩写为 IE9 )在2011年3月14日21:00 发布。</p>
+	</article>
+	<aside>
+		<h4>aside</h4>
+		<p>The Epcot Center is a theme park in Disney World, Florida.</p>
+	</aside>
+
+	<br>
+
+	<!-- web 存储 例子 -->
+	<!-- 所谓 web存储，就是临时生成的 暂存在浏览器上的 自定义变量（变量名字key+变量值value）  -->
+	<!-- sessionStorage.clickcount 中 clickcount是自定义变量变量名，在这里变量的变量值是一个数字值 -->
+	<!-- localStorage.clickcount 中 clickcount也是自定义变量变量名，在这里变量的变量值也是一个数字值 -->	
+	<p>web 存储 例子</p>
+	<p><button onclick="clickCounter_localstorage()" type="button">localstorage例子点我！</button></p>
+	<div id="result1"></div>
+	<p>点击该按钮查看计数器的增加。由于计数数据是localstorage变量，关闭页面重开，数据不会重置</p>
+	<p><button onclick="clickCounter_seesionstorage()" type="button">seesionstorage例子点我！</button></p>
+	<div id="result2"></div>
+	<p>点击该按钮查看计数器的增加。由于计数数据是seesionstorage变量，关闭页面重开，数据会重置</p>
+	
+	<br>
+
+	<!-- web存储典型例子 一个简单的网站列表程序 -->
+	<p>一个简单的网站列表程序</p>
+	<div style="border: 2px dashed #ccc;width:320px;text-align:center;">     
+		<label for="sitename">网站名(key)：</label>  
+		<input type="text" id="sitename" name="sitename" class="text"/>  
+		<br/>  
+		<label for="siteurl">网 址(value)：</label>  
+		<input type="text" id="siteurl" name="siteurl"/>  
+		<br/>  
+		<input type="button" onclick="save()" value="新增记录"/>  
+		<hr/>  
+		<label for="search_phone">输入网站名：</label>  
+		<input type="text" id="search_site" name="search_site"/>  
+		<input type="button" onclick="find()" value="查找网站"/>  
+		<p id="find_result"><br/></p>  
+	</div>  
+	<br/>  
+	<div id="list"></div>  
+	<script>
+		// 载入所有存储在localStorage的数据
+		loadAll(); 	
+		//保存数据  
+		function save(){  
+			var siteurl = document.getElementById("siteurl").value;  
+			var sitename = document.getElementById("sitename").value;  
+			localStorage.setItem(sitename, siteurl);
+			alert("添加成功");
+		}
+		//查找数据  
+		function find(){  
+			var search_site = document.getElementById("search_site").value;  
+			var sitename = localStorage.getItem(search_site);  
+			var find_result = document.getElementById("find_result");  
+			find_result.innerHTML = search_site + "的网址是：" + sitename;  
+		}
+		//将所有存储在localStorage中的对象提取出来，并展现到界面上
+		function loadAll(){  
+			var list = document.getElementById("list");  
+			if(localStorage.length>0){  
+				var result = "<table border='1'>";  
+				result += "<tr><td>网站名</td><td>网址</td></tr>";  
+				for(var i=0;i<localStorage.length;i++){  
+					var sitename = localStorage.key(i);  
+					var siteurl = localStorage.getItem(sitename);  
+					result += "<tr><td>"+sitename+"</td><td>"+siteurl+"</td></tr>";  
+				}  
+				result += "</table>";  
+ 				list.innerHTML = result;  
+			}else{  
+				list.innerHTML = "数据为空……";  
+			}  
+		}      
+    	</script>
+
+	<br>
+
+	<!-- web worker例子 即后台处理程序例子！！ -->
+	<p>web worker 例子：计数器</p>
+	<p>计数： <output id="jishu"></output></p>
+	<button onclick="startWorker()">开始工作</button> 
+	<button onclick="stopWorker()">停止工作</button>
+	<script>
+		var w;	
+		function startWorker() {
+		    if(typeof(Worker) !== "undefined") {
+		        if(typeof(w) == "undefined") {
+		            w = new Worker("demo_workers.js");	//创建 Web Worker 对象
+		        }
+		        w.onmessage = function(event) {		//向 web worker 添加一个 "onmessage" 事件监听器，即设置了onmessage 事件处理函数
+		            document.getElementById("jishu").innerHTML = event.data; //把内容显示到id为jishu处
+		        };
+		    } else {
+		        document.getElementById("jishu").innerHTML = "抱歉，你的浏览器不支持 Web Workers...";
+		    }
+		}	
+		function stopWorker() 
+		{ 
+		    w.terminate();	//终止 Web Worker
+		    w = undefined;
+		}
+		//webworker 补充：
+		//由于 web worker 位于外部文件中，它们无法访问下列 JavaScript 对象：
+		//    window 对象
+		//    document 对象
+		//    parent 对象
+	</script>
+
+	<!-- Server-Sent Events例子 定期更新内容！ 测试失败，因为php/asp文件好像没设么反应，不知道怎么带php/asp文件例子 -->
+	<!-- 定期更新内容：指EventSource定期像远程服务器端php/asp发送请求， 远程php/asp 把新内容传回 EventSource 再显示 -->
+	<p>Server-Sent Events例子 定期更新内容</p>
+	<h1>获取服务端更新数据</h1>
+	<div id="sse1"></div>
+	<script>
+		if(typeof(EventSource)!=="undefined")
+		{
+			//创建EventSource 对象,可以是基于php的对象，也可以是基于asp的对象
+			//var source=new EventSource("demo_sse.php");	//创建一个新的 EventSource 对象，然后规定发送更新的页面的 URL（本例是 "demo_sse.php"）
+			var source=new EventSource("demo_sse.asp");	//创建一个新的 EventSource 对象，然后规定发送更新的页面的 URL（本例是 "demo_sse.asp"）
+			source.onmessage=function(event)	//注意是设置了onmessage 事件处理函数，每接收到一次更新，就会发生一次onmessage 事件
+			{
+				document.getElementById("sse1").innerHTML+=event.data + "<br>";//把内容显示到id为sse1处
+			};
+		}
+		else
+		{
+			document.getElementById("sse1").innerHTML="抱歉，你的浏览器不支持 server-sent 事件...";
+		}
+	</script>
+
+	<!-- web socket例子 建立一个快速的 通道 接通服务端 然后互通数据  没有可以配合调试的远程端口，所以未测试-->
+	<!-- WebSocket是HTML5开始提供的一种在单个 TCP 连接上进行全双工通讯的协议 -->
+	<p>web socket例子 建立通道 互传数据</p>
+	<div id="sse">
+		<a href="javascript:WebSocketTest()">运行 WebSocket</a>
+	</div>
+	<script type="text/javascript">
+		function WebSocketTest()
+		{
+			if ("WebSocket" in window)
+			{
+				alert("您的浏览器支持 WebSocket!");
+				// 打开一个 web socket
+				var ws = new WebSocket("ws://localhost:9998/echo");
+				ws.onopen = function()
+				{
+					// Web Socket 已连接上，使用 send() 方法发送数据
+					ws.send("发送数据");
+					alert("数据发送中...");
+				};			
+				ws.onmessage = function (evt) 
+				{ 
+					var received_msg = evt.data;
+					alert("数据已接收...");
+				};
+				ws.onclose = function()
+				{ 
+					// 关闭 websocket
+					alert("连接已关闭..."); 
+				};
+			}
+			else
+			{
+				// 浏览器不支持 WebSocket
+				alert("您的浏览器不支持 WebSocket!");
+			}
+		}
+		//创建一个支持 WebSocket 的服务 配合调试:
+		//	下载 mod_pywebsocket:	git clone https://github.com/google/pywebsocket.git
+		//	安装:	python setup.py build
+		//		sudo python setup.py install
+		//	查看文档说明:	pydoc mod_pywebsocket
+		//	开启服务:sudo python standalone.py -p 9998 -w ../example/
+		//		以上命令会开启一个端口号为 9998 的服务，使用 -w 来设置处理程序 echo_wsh.py 所在的目录
+	</script>
+
+</body>
+</html>
+/*test.html end*/
+
+
+
+
+
+
+
+
+
+
+
+20170908
+架设网站!!	
+基本知识:
+	主机空间:就是内容存放的服务器空间  000webhost 免费的主机空间!!
+	网域名称:例如:baidu.com, 域名注册公司Godaddy
+	内容管理系统(CMS): Wordpress
+		
+	申请了一个 000webhost 免费主机空间: 使用了 wordpress cms系统
+		url: wingkidng.000webhostapp.com
+		admin useser wingkidng@gmail.com
+		admin password 数字加字母的
+		然而这个架出来的网站只是一个页面网站,只能通过 admin 窗口管理内容,只适合做一些个人博客类的网站
+		不能自主添加自定义 html,js等其他文件,不是一个真正自己假设的网站
+
+架设web服务器(kingders)
+	linux上搭的web服务器 叫 LAMP linux+apache+mysql+php
+	安装apache:apt-get install apache2	
+		登陆:127.0.0.1 测试成功
+		Apache的默认文档根目录是在Ubuntu上的 /var/www目录
+		配置文件是 /etc/apache2/apache2.conf。
+		配置存储在的子目录在 /etc/apache2目录
+	安装mysql: apt-get install mysql-server mysql-client 
+		前面弄python时已经做好了 mysql!!
+	安装PHP5: apt-get install php5
+		安装Apache的PHP5的模块: apt-get install libapache2-mod-php5
+		安装完需要重启 apache: /etc/init.d/apache2 restart
+		添加一个测试的 phpinfo.php 在/var/www/里,浏览器 登陆 127.0.0.1/phpinfo.php测试成功
+		查看 php5 的可添加扩展模块有哪些,apt-cache search php5,
+		安装重要的 php 扩展模块:(包括mysql支持模块)
+			apt-get install php5-mysql php5-curl php5-gd php5-idn php-pear \
+			php5-imagick php5-imap php5-mcrypt php5-memcache php5-ming php5-ps \
+			php5-pspell php5-recode php5-snmp php5-sqlite php5-tidy php5-xmlrpc php5-xsl
+			安装完需要重启 apache: /etc/init.d/apache2 restart
+			登陆:http://127.0.0.1/phpinfo.php 可以看到更多模块内容
+	安装phpMyAdmin: apt-get install phpmyadmin 
+		phpMyAdmin是一个网络接口，通过它可以管理你的MySQL数据库
+		出现:	Web server to reconfigure automatically: 时选 apache
+		出现:	The phpmyadmin package must have a database installed and configured before it can be used.
+				This can be optionally handled with dbconfig-common.
+			If you are an advanced database administrator and know that 
+				you want to perform this configuration manually, 
+				or if your database has already been installed and configured, 
+				you should refuse this option.  
+				Details on what needs to be done should most likely be provided in /usr/share/doc/phpmyadmin.
+			Otherwise, you should probably choose this option.
+			Configure database for phpmyadmin with dbconfig-common? 
+			暂时选了yes
+		出现:	Please provide the password for the administrative account 
+				with which this package should create its MySQL database and user.
+			Password of the database's administrative user:
+			填了:那个数字密码
+		然后有出现了: 提示填密码,确认密码,原来这里是建立mysql账户,我去
+		登陆 127.0.0.1/phpMyAdmin 失败!!
+		显然做 phpMyAdmin的步骤都错了,需要修改,
+		到 apache 网站根目录: cd /var/www/html
+		建立快捷方式到这: sudo ln -s /usr/share/phpmyadmin phpmyadmin
+		登陆 127.0.0.1/phpmyadmin 成功
+		然后输入 刚刚使用安装phpmyadmin时新建的mysql账户,失败!!
+		终端 用 mysql 命令登陆这个新账户也不行!! (怀疑根本就没有成功建立) 
+		查看安装log:	Setting up dbconfig-common (1.8.47+nmu1) ...
+				Creating config file /etc/dbconfig-common/config with new version
+		查看: gedit /etc/dbconfig-common/config 并没有发现什么
+		查看: gedit /etc/dbconfig-common/phpmyadmin.conf,发现原来刚建立的数据库名字是 phpmyadmin
+		终端 用 mysql 命令登陆这个新账户还真进去了
+		登陆 127.0.0.1/phpmyadmin 然后登陆phpmyadmin账户
+		查看了phpmyadmin 的账户表单发现,感觉这个账户应留着,于是打开phpmyadmin.conf 把密码隐去不显示就算了
+		最后,登陆 127.0.0.1/phpmyadmin 然后登陆root账户,看到了以前改动的内容,此root是我之前建立的root
+		确认 pymyadmin 可以可视化 处理 mysql database内容!
+架设web服务器(win7 的 IIS web服务器)
+	控制面板 -> 程序 -> 打开或关闭Windows服务 -> Internet信息服务 -> 勾选所有 -> 确定
+	浏览器登录 http://localhost/，若出现IIS7欢迎界面.表示成功
+	允许 局域网上的机子访问:
+		设置防火墙:控制面板 -> 系统和安全 -> 允许程序通过Windows防火墙 -> 万维网服务HTTP -> 右侧的两个复选都勾上 -> 确定
+		cmd.exe -> ipconfig 得到 本机ip 192.168.1.108
+		同局域网其他机子浏览器登录 192.168.1.108，若出现IIS7欢迎界面.表示成功
+	补充:	iis服务器的 web端口默认: 80
+		更改默认端口: 开始 -> 管理工具
+	至此基本完成服务器假设.(还有 php,mysql等扩充未创建)
+外网映射 (kingders机子)
+	架设好web服务器,如果需要供外网登陆, 又没有有可能申请公网ip,就只能使用外网映射的方式
+	服务商有 花生壳 nat123 等
+	安装 nat123服务:
+		装环境: apt-get install mono-complete 
+		测试环境: mono -v
+		http://www.nat123.com 登陆配置映射了!!
+			端口映射添加 -> 非80网站 ->映射线路:nat123 -> 应用名称随便填
+			-> 内网端口: 8099 -> 内网网址:localhost -> 外网端口:18099 
+			-> 外网域名: 410883c8.nat123.net -> 确认保存
+		下载客户端脚本 到 /home/kingders/other/nat123/ 解压
+		执行客户端服务:	cd /home/kingders/other/nat123/nat123linux201505
+				mono nat123linux.sh
+	外网机子浏览器登录:410883c8.nat123.net:18099 (注意不是:www.410883c8.nat123.net:18099)
+	成功!!
+外网映射 (win7 + iis)
+	安装nat123 win7 版本
+	http://www.nat123.com 登陆配置映射了!!
+		端口映射添加 -> 80网站 ->映射线路:nat123 -> 应用名称随便填
+		-> 内网端口: 80 -> 内网网址:localhost -> (外网端口固定为80,不用管) 
+		-> 外网域名: 5708346c.nat123.net -> 确认保存
+	登录 nat123客户端后,就会自动建立映射!!!
+	然后,外网机子浏览器登录:5708346c.nat123.net (注意不是:www.5708346c.nat123.net)
+	成功访问 win7 上 开启的 iis web服务器
+web服务器区别:
+	发现: django+uwsgi 相当于 apache 相当与 iis
+	django 是单线程的,是一个web开发框架(集成简单服务器软件和网站开发框架),让开发者更简单开发网站
+	uwisai 被成为是一个容器,使得django 实现多线程的操作,即扩展django的服务器软件功能,使之达到商用级别
+	apache 是一个多线程完备的商用web服务器软件,但不提供网站开发框架,开发者只能原始开发网站,再加载到apache上使用	
+	iis 是microsoft公司的服务器软件,不提供网站开发框架,开发者只能原始开发网站,再加载到 iis 上使用	
+
+
+
+
+
+
+
+
+
+
+20170910
+laya游戏开发!!!
+使用layaide,使用javascript开发
+发布了的游戏包目录要放到体系完备的web服务器里,通过域名端口登录打开才行, 直接把文件拉到浏览器,并不会很好执行!!!
+laya项目结构:
+	.laya 		// 编译配置文件夹
+	bin		// 项目开发过程中,运行调试执行文件的所在地
+	 |---libs	// 可执行文件用到的 js 库,编译后,自动添加必要的库文件
+	 |---res	// 放置需要使用的各种资源文件夹
+	 |---index.html	// 项目开发过程中,主运行调试执行文件,注意在这里引用了src->LayaSample.js才是真正的游戏源码文件
+	libs		// 其他库文件
+	release		// 发布的完整游戏包所在文件夹
+	src		// 我们开发的游戏的 源代码 文件夹
+	 |--LayaSample.js	//新建项目时的默认 游戏源码文件,用户直接从修改这个文件开始 实现游戏!!
+以uxi下是一个 完整的laya项目 例子:
+/* LayaSample.js start */
+(function()
+{
+	var Sprite  = Laya.Sprite;
+	var Stage   = Laya.Stage;
+	var Texture = Laya.Texture;
+	var Browser = Laya.Browser;
+	var Handler = Laya.Handler;
+	var WebGL   = Laya.WebGL;
+
+	(function()
+	{
+		// 不支持WebGL时自动切换至Canvas
+		Laya.init(Browser.clientWidth, Browser.clientHeight, WebGL);
+
+		Laya.stage.alignV = Stage.ALIGN_MIDDLE;
+		Laya.stage.alignH = Stage.ALIGN_CENTER;
+
+		Laya.stage.scaleMode = "showall";
+		Laya.stage.bgColor = "#232628";
+
+		showApe();
+	})();
+
+	function showApe()
+	{
+		// 方法1：使用loadImage
+		var ape = new Sprite();
+		Laya.stage.addChild(ape);
+		ape.loadImage("res/ui/button1.png");
+
+		// 方法2：使用drawTexture
+		Laya.loader.load("res/ui/button2.png", Handler.create(this, function()
+		{
+			var t = Laya.loader.getRes("res/ui/button2.png");
+			var ape = new Sprite();
+			ape.graphics.drawTexture(t, 0, 0);
+			Laya.stage.addChild(ape);
+			ape.pos(200, 0);
+		}));
+	}
+})();
+/* LayaSample.js end */
+项目完整,用户只是修改了 LayaSample.js 和添加了 res里的内容,其中需要调用的 图片.png 放在 bin->res->ui 目录里!!
+LayaSample.js 里的代码完整, 是从laya官网截下来 button_api演示 内容!!
+由于项目完整,所以,可以正常调试执行和发布成完整游戏包
+进一步讨论 LayaSample.js:
+(function()){})(); 既定义了函数,又执行了函数:
+	function()){} 定了函数, (..)();执行了这个函数
+laya引擎库函数架构笔记:
+	stage 舞台类,也称背景类.
+		注意Laya.Stage 与Laya.stage 指代的内容是不一样的
+	sprite 一般显示对象类, 
+		注意Laya.Sprite 与Laya.sprite 指代的内容是不一样的
+		一个一般显示对象参数一般用 ape 表示
+		pos是 ape位置
+		pivot 是 ape轴心的位置
+		可以相嵌组成 组合的一般显示对象!! 一个一般显示对象参数一般用 ape 表示
+		var ape = new Laya.Sprite();	
+		var ape1 = new Laya.Sprite();
+		ape.addChild(ape1);
+	swf,json动画先跳过
+	
+开发内容:
+	1,按键随机步数, 图标去ape 到指定位置!!
+	2,即时录音,即时传送,到达音频压入队列,非录音时,即空闲,播放音频,完整播完才销掉,中途被录音操作中断后,重新播放被中断音频
+	3,
+
+
+
+
+
+
+
+
+
+20170912
+php学习:
+	php是服务器脚本语言,当远程客户端访问 服务器的 .php 文件时,
+	服务器会先解析 .php 文件内容,然后把生成的结果html页 发到远程客服端.
+	这里更要注意的是:
+		如果.html文件 使用<?php ?>嵌入了 php代码段, 一定要把文件扩展名改成 .php
+		如果依然保留.html扩展名, php段代码将不被执行!!
+		因为客户端请求.html时,服务器软件使用默认html解析器并不能解析 php段代码
+		如果客户端请求.php时,服务器软件会使用php解析器解释文件,php除了可解析php段代码,还包含html解析器功能,能解析所有的html的内容!!
+		架设部署的一般服务器软件不包括 php解析模块,所以需要在架设部署服务器软件时需要另外添加这个模块
+	php语法内容放在 html5_learn -> php_learn
+css-css3学习:
+	CSS 指层叠样式表
+	CSS声明总是以分号(;)结束，声明组以大括号({})括起来:
+	CSS注释以 "/*" 开始, 以 "*/" 结束, 
+	HTMLid选择器 id=xx ,对应 CSS 中 id 选择器 #xx 例如:
+		//.html
+		<p id="xx">vvv</p>
+		//.css
+		#xx
+		{
+			text-align:center;
+			color:red;
+		} 
+	HTML中以class属性表示 class="bbb",对应 CSS 中 类选择器 .bbb 例如:
+		//.html
+		<p class="bbb">vvv</p>
+		//.css
+		.bbb
+		{
+			text-align:center;
+			color:red;
+		} 
+	还有专门的class属性对应,例如: html的 <p class="center">vvv</p> 对应 CSS的 p.center 例如:
+		//.html
+		<p class="center">vvv</p>
+		//.css
+		p.bbb
+		{
+			text-align:center;
+			color:red;
+		} 
+	插入样式表的方法有三种:
+		外部样式表(External style sheet) 例如:
+			<link rel="stylesheet" type="text/css" href="bbbbb.css">
+			bbbbb.css内容:
+				hr {color:sienna;}
+				p {margin-left:20px;}	/*不要在属性值(20px)与单位(margin-left:)之间留有空格*/
+				body 
+				{
+					background-image:url("/images/back40.gif");
+					background-color:#cccccc;
+				}
+		内部样式表(Internal style sheet) 例如:			
+			<head>
+			<style>
+			hr {color:sienna;}
+			p {margin-left:20px;}
+			body {background-image:url("images/back40.gif");}
+			</style>
+			</head>
+		内联样式(Inline style)例如:
+			<p style="color:sienna;margin-left:20px">这是一个段落。</p>
+		内联样式）Inline style > （内部样式）Internal style sheet >（外部样式）External style sheet > 浏览器默认样式
+	背景:
+		背景颜色,例子:
+			h1 {background-color:#6495ed;}	/* h1标签的段的背景色 颜色十六进制表示 */
+			p {background-color:#e0ffff;}	/* p标签的段的背景色 RGB标准表示 */
+			div {background-color:#b0c4de;}	/* div标签的段的背景色 颜色名称表示 */
+		背景图像,例子:
+			body 	
+			{
+				background-image:url('paper.gif');
+				background-repeat:repeat-x;	/*图像只在水平方向平铺 (repeat-x)*/
+				background-repeat:no-repeat;	/*不想让图像平铺,与上述平铺不共存,只是示范而已*/
+				background-position:right top;	/*改变图像在背景中的位置*/
+			} 
+		背景属性简写,例子:
+			body {background:#ffffff url('img_tree.png') no-repeat right top;}
+			属性简写时,顺序:
+				background-color
+				background-image
+				background-repeat
+				background-attachment
+				background-position
+	文本格式:
+		文本颜色,例子:
+			body {color:red;}
+			h1 {color:#00ff00;}
+			h2 {color:rgb(255,0,0);}
+		文本对齐,例子:
+			h1 {text-align:center;}
+			p.date {text-align:right;}
+			p.main {text-align:justify;}
+		文本修饰,例子:
+			a {text-decoration:none;}	/*none是删除文本的装饰,比如可以删除链接文件下划线*/
+			h1 {text-decoration:overline;}	/*上画线*/
+			h2 {text-decoration:line-through;}	/*中划线*/
+			h3 {text-decoration:underline;}		/*下划线*/
+		文本转换,例子:
+			p.uppercase {text-transform:uppercase;}		/*全为大写*/
+			p.lowercase {text-transform:lowercase;}		/*全为小写*/
+			p.capitalize {text-transform:capitalize;}	/*单词首字母大写,其他小写*/
+		文本缩进,例子:
+			p {text-indent:50px;}	/*第一行的缩进50px(像素)*/
+	链接样式:
+		关于链接的css样式写法比较特别,例子:
+		//.css
+		ab:link {background-color:#B2FF99;color:#000000;text-decoration:none;}      /* 未访问链接*/
+		ab:visited {background-color:#FFFF85;color:#00FF00;text-decoration:none;}  /* 已访问链接 */
+		ab:hover {background-color:#FF704D;color:#FF00FF;text-decoration:underline;}  /* 鼠标移动到链接上 */
+		ab:active {background-color:#FF704D;color:#0000FF;text-decoration:underline;}  /* 鼠标点击时 */
+		//.html
+		<ab href="www.baidu.com">这是一个链接</a>
+		标识使用了":"号,而且.css设置有先后顺序:link->visited->hover->active
+	CSS 列表的属性字:
+		list-style
+		list-style-image
+		list-style-position
+		ist-style-type
+	CSS 字体的属性字:
+		font 	在一个声明中设置所有的字体属性
+		font-family 	指定文本的字体系列
+		font-size 	指定文本的字体大小
+		font-style 	指定文本的字体样式
+		font-variant 	以小型大写字体或者正常字体显示文本。
+		font-weight     指定字体的粗细。
+	表格,例子:
+		见 csstest.html->表格例子
+	盒子模型:
+		Margin(外边距) - 清除边框外的区域，外边距是透明的。
+		Border(边框) - 围绕在内边距和内容外的边框。
+		Padding(内边距) - 清除内容周围的区域，内边距是透明的。
+    		Content(内容) - 盒子的内容，显示文本和图像。
+		例子:
+			div {
+			    background-color: lightgrey;
+			    width: 300px;
+			    border: 25px solid green;
+			    padding: 25px;
+			    margin: 25px;
+			}	
+	分组 和 嵌套 选择器,例子:
+		//.css
+		p {color:blue;text-align:center;}
+		.marked {background-color:red;}
+		.marked p {color:white;}
+		//.html
+		<p>这个段落是蓝色文本，居中对齐。</p>
+		<div class="marked"><p>这个段落不是蓝色文本。</p></div>
+		<p>所有 class="marked"元素内的 p 元素指定一个样式，但有不同的文本颜色。</p>
+	尺寸属性关键字:
+		height 	设置元素的高度。
+		line-height 	设置行高。
+		max-height 	设置元素的最大高度。
+		max-width 	设置元素的最大宽度。
+		min-height 	设置元素的最小高度。
+		min-width 	设置元素的最小宽度。
+		width 	设置元素的宽度。
+	显示与隐藏 属性关键字: display, visibility 例子:
+		h1 {visibility:hidden;}		/*隐藏h1段内容*/
+		h2 {display:none;}		/*也是隐藏例子,隐藏h2段内容*/
+	定位,例子:
+		p {position:fixed;top:30px;}	/* static 表示默认位置 top, bottom, left, right 无需设置 */
+		p {position:fixed;top:30px;}	/* fixed 表示 top, bottom, left, right 重新定义位置 */
+		h2 {position:relative;left:-20px;}/* relative 表示 top, bottom, left, right 相对位置,相对移动了多少后的位置 */
+		h2 {position:absolute;left:100px;top:150px;}/* absolute 表示 top, bottom, left, right 相对<html>的绝对位置 */
+	Float(浮动);
+		float属性关键字,就是段内容动态位置分配原则
+		例子:
+			img {float:right;}	/*img段内容,按从右到左,从上到下的分布原则*/
+	后代选取器,例子:
+		//.html
+		<div>
+			<p>段落 1。 在 div 中。</p>
+			<p>段落 2。 在 div 中。</p>
+		</div>
+		<p>段落 3。不在 div 中。</p>
+		<p>段落 4。不在 div 中。</p>
+		//.css
+		div p {background-color:yellow;}	/*这里指向的<div>里的<p>段内容*/
+	子元素选择器,例子	
+		div>p {background-color:yellow;}	/*感觉与后代选取器一样的效果*/
+	后邻兄弟选择器
+		div+p {background-color:yellow;}	/*与<div>段相邻的后一段如果是<p>,那就是指这个<p>段*/
+	后面的兄弟们选择器
+		div-p {background-color:yellow;}	/*与<div>同层级,且位于<div>后的所有<p>段*/
+	伪类,就是带":"号的系统类,例如之前链接时见到的 ab:link 的 :link 等
+		所有CSS伪类/元素
+		选择器 			示例 		示例说明
+		:checked 		input:checked 	选择所有选中的表单元素
+		:disabled 		input:disabled 	选择所有禁用的表单元素
+		:empty 			p:empty 	选择所有没有子元素的p元素
+		:enabled 		input:enabled 	选择所有启用的表单元素
+		:first-of-type 		p:first-of-type 选择每个父元素是p元素的第一个p子元素
+		:in-range 		input:in-range 	选择元素指定范围内的值
+		:invalid 		input:invalid 	选择所有无效的元素
+		:last-child 		p:last-child 	选择所有p元素的最后一个子元素
+		:last-of-type 		p:last-of-type 	选择每个p元素是其母元素的最后一个p元素
+		:not(selector) 		:not(p) 	选择所有p以外的元素
+		:nth-child(n) 		p:nth-child(2) 	选择所有p元素的第二个子元素
+		:nth-last-child(n) 	p:nth-last-child(2) 	选择所有p元素倒数的第二个子元素
+		:nth-last-of-type(n) 	p:nth-last-of-type(2) 	选择所有p元素倒数的第二个为p的子元素
+		:nth-of-type(n) 	p:nth-of-type(2) 	选择所有p元素第二个为p的子元素
+		:only-of-type 		p:only-of-type 	选择所有仅有一个子元素为p的元素
+		:only-child 		p:only-child 	选择所有仅有一个子元素的p元素
+		:optional 		input:optional 	选择没有"required"的元素属性
+		:out-of-range 		input:out-of-range 	选择指定范围以外的值的元素属性
+		:read-only 		input:read-only 	选择只读属性的元素属性
+		:read-write 		input:read-write 	选择没有只读属性的元素属性
+		:required 		input:required 	选择有"required"属性指定的元素属性
+		:root 			root 		选择文档的根元素
+		:target 		#news:target 	选择当前活动#news元素(点击URL包含锚的名字)
+		:valid 			input:valid 	选择所有有效值的属性
+		:link 			a:link 		选择所有未访问链接
+		:visited 		a:visited 	选择所有访问过的链接
+		:active 		a:active 	选择正在活动链接
+		:hover 			a:hover 	把鼠标放在链接上的状态
+		:focus 			input:focus 	选择元素输入后具有焦点
+		:first-letter 		p:first-letter 	选择每个<p> 元素的第一个字母
+		:first-line 		p:first-line 	选择每个<p> 元素的第一行
+		:first-child 		p:first-child 	选择器匹配属于任意元素的第一个子元素的 <]p> 元素
+		:before 		p:before 	在每个<p>元素之前插入内容
+		:after 			p:after 	在每个<p>元素之后插入内容
+		:lang(language) 	p:lang(it) 	为<p>元素的lang属性选择一个开始值
+	css例子:
+		垂直导航,下拉菜单,
+
+
