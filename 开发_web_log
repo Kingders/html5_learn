@@ -3106,100 +3106,6 @@ web服务器区别:
 
 
 
-
-
-
-20170910
-laya游戏开发!!!
-使用layaide,使用javascript开发
-发布了的游戏包目录要放到体系完备的web服务器里,通过域名端口登录打开才行, 直接把文件拉到浏览器,并不会很好执行!!!
-laya项目结构:
-	.laya 		// 编译配置文件夹
-	bin		// 项目开发过程中,运行调试执行文件的所在地
-	 |---libs	// 可执行文件用到的 js 库,编译后,自动添加必要的库文件
-	 |---res	// 放置需要使用的各种资源文件夹
-	 |---index.html	// 项目开发过程中,主运行调试执行文件,注意在这里引用了src->LayaSample.js才是真正的游戏源码文件
-	libs		// 其他库文件
-	release		// 发布的完整游戏包所在文件夹
-	src		// 我们开发的游戏的 源代码 文件夹
-	 |--LayaSample.js	//新建项目时的默认 游戏源码文件,用户直接从修改这个文件开始 实现游戏!!
-以uxi下是一个 完整的laya项目 例子:
-/* LayaSample.js start */
-(function()
-{
-	var Sprite  = Laya.Sprite;
-	var Stage   = Laya.Stage;
-	var Texture = Laya.Texture;
-	var Browser = Laya.Browser;
-	var Handler = Laya.Handler;
-	var WebGL   = Laya.WebGL;
-
-	(function()
-	{
-		// 不支持WebGL时自动切换至Canvas
-		Laya.init(Browser.clientWidth, Browser.clientHeight, WebGL);
-
-		Laya.stage.alignV = Stage.ALIGN_MIDDLE;
-		Laya.stage.alignH = Stage.ALIGN_CENTER;
-
-		Laya.stage.scaleMode = "showall";
-		Laya.stage.bgColor = "#232628";
-
-		showApe();
-	})();
-
-	function showApe()
-	{
-		// 方法1：使用loadImage
-		var ape = new Sprite();
-		Laya.stage.addChild(ape);
-		ape.loadImage("res/ui/button1.png");
-
-		// 方法2：使用drawTexture
-		Laya.loader.load("res/ui/button2.png", Handler.create(this, function()
-		{
-			var t = Laya.loader.getRes("res/ui/button2.png");
-			var ape = new Sprite();
-			ape.graphics.drawTexture(t, 0, 0);
-			Laya.stage.addChild(ape);
-			ape.pos(200, 0);
-		}));
-	}
-})();
-/* LayaSample.js end */
-项目完整,用户只是修改了 LayaSample.js 和添加了 res里的内容,其中需要调用的 图片.png 放在 bin->res->ui 目录里!!
-LayaSample.js 里的代码完整, 是从laya官网截下来 button_api演示 内容!!
-由于项目完整,所以,可以正常调试执行和发布成完整游戏包
-进一步讨论 LayaSample.js:
-(function()){})(); 既定义了函数,又执行了函数:
-	function()){} 定了函数, (..)();执行了这个函数
-laya引擎库函数架构笔记:
-	stage 舞台类,也称背景类.
-		注意Laya.Stage 与Laya.stage 指代的内容是不一样的
-	sprite 一般显示对象类, 
-		注意Laya.Sprite 与Laya.sprite 指代的内容是不一样的
-		一个一般显示对象参数一般用 ape 表示
-		pos是 ape位置
-		pivot 是 ape轴心的位置
-		可以相嵌组成 组合的一般显示对象!! 一个一般显示对象参数一般用 ape 表示
-		var ape = new Laya.Sprite();	
-		var ape1 = new Laya.Sprite();
-		ape.addChild(ape1);
-	swf,json动画先跳过
-	
-开发内容:
-	1,按键随机步数, 图标去ape 到指定位置!!
-	2,即时录音,即时传送,到达音频压入队列,非录音时,即空闲,播放音频,完整播完才销掉,中途被录音操作中断后,重新播放被中断音频
-	3,
-
-
-
-
-
-
-
-
-
 20170912
 php学习:
 	php是服务器脚本语言,当远程客户端访问 服务器的 .php 文件时,
@@ -3211,7 +3117,7 @@ php学习:
 		如果客户端请求.php时,服务器软件会使用php解析器解释文件,php除了可解析php段代码,还包含html解析器功能,能解析所有的html的内容!!
 		架设部署的一般服务器软件不包括 php解析模块,所以需要在架设部署服务器软件时需要另外添加这个模块
 	php语法内容放在 html5_learn -> php_learn
-css-css3学习:
+css学习:
 	CSS 指层叠样式表
 	CSS声明总是以分号(;)结束，声明组以大括号({})括起来:
 	CSS注释以 "/*" 开始, 以 "*/" 结束, 
@@ -3233,6 +3139,17 @@ css-css3学习:
 			text-align:center;
 			color:red;
 		} 
+	HTML中以 其他属性表示,例如
+		//.css
+		[jjj=hello] {width:150px;} /*涵括所有 jjj属性为hello的段的css格式,即指bb,cc段*/
+		cc[jjj=hello] {width:150px;} /*仅当cc段的jjj属性为hello时的格式 cc[jjj=hello] 中间不能有空格 */
+		[jjj] {border:5px solid green;} /*所有含有jjj属性的段,应有的css格式,即指aa,bb,cc,段*/
+		[jjj~=llo] {border:5px solid green;} /*jjj属性含有关键字符窜llo的段,应有的css格式,即指aa,bb,cc,段*/
+		//.html
+		<aa jjj="hellomate" kkk="nihao">哦哦哦哦哦哦哦哦哦哦</aa>
+		<bb jjj="hello" kkk="nihao">哦哦哦哦哦哦哦哦哦哦</bb>
+		<cc jjj="hello" kkk="nihao">哦哦哦哦哦哦哦哦哦哦</cc>
+
 	还有专门的class属性对应,例如: html的 <p class="center">vvv</p> 对应 CSS的 p.center 例如:
 		//.html
 		<p class="center">vvv</p>
@@ -3425,7 +3342,1697 @@ css-css3学习:
 		:before 		p:before 	在每个<p>元素之前插入内容
 		:after 			p:after 	在每个<p>元素之后插入内容
 		:lang(language) 	p:lang(it) 	为<p>元素的lang属性选择一个开始值
+	media类:
+		同样的内容,在不同的终端上显示,应该有自己舒服格式,于是使用media类,例如
+			<style>
+			@media screen	/*应用在屏幕的格式*/
+			{
+			    p.test {font-family:verdana,sans-serif;font-size:14px;}
+			}
+			@media print	/*应用在印刷媒体的格式*/
+			{
+			    p.test {font-family:times,serif;font-size:10px;}
+			}
+			@media screen,print	/*同时应用在屏幕和印刷媒体的格式*/
+			{
+			    p.test {font-weight:bold;}
+			}
+			</style>
+		@media的参数:
+		all 		用于所有的媒体设备。
+		aural 		用于语音和音频合成器。
+		braille 	用于盲人用点字法触觉回馈设备。
+		embossed 	用于分页的盲人用点字法打印机。
+		handheld 	用于小的手持的设备。
+		print 		用于打印机。
+		projection 	用于方案展示，比如幻灯片。
+		screen 		用于电脑显示器。
+		tty 		用于使用固定密度字母栅格的媒体，比如电传打字机和终端。
+		tv 		用于电视机类型的设备。
+
 	css例子:
-		垂直导航,下拉菜单,
+		垂直导航,下拉菜单,见csstest.html
+		提示工具Tooltip, 图册,响应式图册,透明层叠的图片文字,图像拼合按钮 见csstest1.html
+css3新添:
+	边框圆角:
+		border-radius 	所有四个边角 border-*-*-radius 属性的缩写
+		border-top-left-radius 	定义了左上角的弧度
+		border-top-right-radius 	定义了右上角的弧度
+		border-bottom-right-radius 	定义了右下角的弧度
+		border-bottom-left-radius 	定义了左下角的弧度
+		例:
+		div {
+			border:2px solid;
+			/*border-radius:25px;*/	/*统一圆角,效果见自己实验*/
+			/*border-radius: 15px 50px 30px 5px:*/ /*独立圆角,效果见自己实验*/
+			/*border-radius: 15px 50px 30px:*/ /*三值圆角,效果见自己实验*/
+			border-radius: 15px 50px: /*双值圆角,效果见自己实验*/
+		} 
+	盒阴影,例:div {width:300px;height:100px;background-color:yellow;box-shadow: 10px 10px 5px #888888;}
+	边界图片,例:
+		div {
+			border:15px solid transparent;
+			width:250px;
+			padding:10px 20px;
+			/* border-image:url(border.png) 30 30 stretch;*/ /*图像平铺（重复）来填充边框*/
+			border-image:url(border.png) 30 30 stretch;	/*图像被拉伸以填充边框*/
+		}
+	背景:
+		图片:
+			background-image
+			background-position
+			background-repeat:
+		其他:
+			background-clip 	规定背景的绘制区域。 	3
+			background-origin 	规定背景图片的定位区域。 	3
+			background-size 	规定背景图片的尺寸。
+	渐变: background 后的函数形状参数 linear-gradient(),例如
+		#grad3 {
+		    height: 100px;
+		    background: -webkit-linear-gradient(180deg, red, blue); /* Safari 5.1 - 6.0 */
+		    background: -o-linear-gradient(180deg, red, blue); /* Opera 11.1 - 12.0 */
+		    background: -moz-linear-gradient(180deg, red, blue); /* Firefox 3.6 - 15 */
+		    background: linear-gradient(180deg, red, blue); /* 标准的语法（必须放在最后） */
+		}
+		除了linear-gradient(),还有有:
+			radial-gradient(),repeating-linear-gradient(),repeating-radial-gradient()
+	文本效果:
+		text-shadow,文字阴影
+		box-shadow,盒子阴影
+		text-overflow,文字溢出(隐藏或溢出)
+		word-wrap:break-word;允许自动换行
+		word-break:keep-all;不拆词换行
+		word-break:break-all;可拆词换行
+		常用:
+		hanging-punctuation 	规定标点字符是否位于线框之外。 	
+		punctuation-trim 	规定是否对标点字符进行修剪。 	
+		text-align-last 	设置如何对齐最后一行或紧挨着强制换行符之前的行。 	
+		text-emphasis 	向元素的文本应用重点标记以及重点标记的前景色。 	
+		text-justify 	规定当 text-align 设置为 "justify" 时所使用的对齐方法。 	
+		text-outline 	规定文本的轮廓。 	3
+		text-overflow 	规定当文本溢出包含元素时发生的事情。 	
+		text-shadow 	向文本添加阴影。 	
+		text-wrap 	规定文本的换行规则。 	
+		word-break 	规定非中日韩文本的换行规则。 	
+		word-wrap 	允许对长的不可分割的单词进行分割并换行到下一行。
+		例如,添加阴影: h1 {text-shadow: 5px 5px 5px #FF0000;}
+	2d/3d转换,例如:	
+		translate() 平移变换
+		div
+		{
+			width:100px;
+			height:75px;
+			background-color:red;
+			border:1px solid black;
+		}
+		div#div2
+		{
+			transform:translate(50px,100px);	/* translate() 平移变换*/
+			-ms-transform:translate(50px,100px); /* IE 9 */
+			-webkit-transform:translate(50px,100px); /* Safari and Chrome */
+		}
+		div#div3
+		{
+			transform:rotate(30deg);	/*rotate() 旋转变换*/
+			-ms-transform:rotate(30deg); /* IE 9 */
+			-webkit-transform:rotate(30deg); /* Safari and Chrome */
+		}
+		div#div4
+		{
+			-ms-transform: scale(2,3); /* IE 9 */
+			-webkit-transform: scale(2,3); /* Safari */
+			transform: scale(2,3); /* 缩放变换 */
+		}
+		div#div5
+		{
+			transform: translate(50px,100px) scale(2,3);	/*多重变换*/
+			-ms-transform:skew(30deg,20deg); /* IE 9 */
+			-webkit-transform:skew(30deg,20deg); /* Safari and Chrome */
+		}
+		以下列出了所有的转换属性:
+		transform 		适用于2D或3D转换的元素 	
+		transform-origin 	允许您更改转化元素位置
+		transform-style 	规定被嵌套元素如何在 3D 空间中显示。 	
+		perspective 		规定 3D 元素的透视效果。 	
+		perspective-origin 	规定 3D 元素的底部位置。 	
+		backface-visibility 	定义元素在不面对屏幕时是否可见。 		
+		2D 转换方法
+		matrix(n,n,n,n,n,n) 	定义 2D 转换，使用六个值的矩阵。
+		translate(x,y) 		定义 2D 转换，沿着 X 和 Y 轴移动元素。
+		translateX(n) 		定义 2D 转换，沿着 X 轴移动元素。
+		translateY(n) 		定义 2D 转换，沿着 Y 轴移动元素。
+		scale(x,y) 		定义 2D 缩放转换，改变元素的宽度和高度。
+		scaleX(n) 		定义 2D 缩放转换，改变元素的宽度。
+		scaleY(n) 		定义 2D 缩放转换，改变元素的高度。
+		rotate(angle) 		定义 2D 旋转，在参数中规定角度。
+		skew(x-angle,y-angle) 	定义 2D 倾斜转换，沿着 X 和 Y 轴。
+		skewX(angle) 		定义 2D 倾斜转换，沿着 X 轴。
+		skewY(angle) 		定义 2D 倾斜转换，沿着 Y 轴。
+		3D 转换方法
+		matrix3d(n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n) 	定义 3D 转换，使用 16 个值的 4x4 矩阵。
+		translate3d(x,y,z) 	定义 3D 转化。
+		translateX(x) 	定义 3D 转化，仅使用用于 X 轴的值。
+		translateY(y) 	定义 3D 转化，仅使用用于 Y 轴的值。
+		translateZ(z) 	定义 3D 转化，仅使用用于 Z 轴的值。
+		scale3d(x,y,z) 	定义 3D 缩放转换。
+		scaleX(x) 	定义 3D 缩放转换，通过给定一个 X 轴的值。
+		scaleY(y) 	定义 3D 缩放转换，通过给定一个 Y 轴的值。
+		scaleZ(z) 	定义 3D 缩放转换，通过给定一个 Z 轴的值。
+		rotate3d(x,y,z,angle) 	定义 3D 旋转。
+		rotateX(angle) 	定义沿 X 轴的 3D 旋转。
+		rotateY(angle) 	定义沿 Y 轴的 3D 旋转。
+		rotateZ(angle) 	定义沿 Z 轴的 3D 旋转。
+		perspective(n) 	定义 3D 转换元素的透视视图。
+	过渡,例如:
+		div {
+		    width: 100px;
+		    height: 100px;
+		    background: red;
+		    -webkit-transition: width 2s, height 2s, -webkit-transform 2s; /* For Safari 3.1 to 6.0 */
+		    transition: width 2s, height 2s, transform 2s;			}
+		
+		div:hover {
+		    width: 200px;
+		    height: 200px;
+		    -webkit-transform: rotate(180deg); /* Chrome, Safari, Opera */
+		    transform: rotate(180deg);
+		}
+		/* 当鼠标 点向<div>那段内容时,width,height,transform 
+		   三个内容会经历过渡动画,转换到div:hover 后的css设置参数
+		   当鼠标 离开<div>那段内容时,width,height,transform
+		   三个内容会经历过渡动画,回到div的css设置参数
+		 */
+		过渡属性:
+			transition 		简写属性，用于在一个属性中设置四个过渡属性。 
+			transition-property 	规定应用过渡的 CSS 属性的名称.
+			transition-duration 	定义过渡效果花费的时间。默认是 0。 
+			transition-timing-function 	规定过渡效果的时间曲线。默认是 "ease"。 
+			transition-delay 	规定过渡效果何时开始。默认是 0。
+	动画,例如:
+		//.css
+		div
+		{
+			width:100px;
+			height:100px;
+			background:red;
+			position:relative;
+			animation-name:myfirst;		/*div里定义了一个的动画*/
+			animation-duration:5s;
+			animation-timing-function:linear;
+			animation-delay:2s;
+			animation-iteration-count:infinite;	/*无休止动画*/
+			animation-direction:alternate;
+			animation-play-state:running;
+			/* 为了兼容 Safari and Chrome: */
+			-webkit-animation-name:myfirst;
+			-webkit-animation-duration:5s;
+			-webkit-animation-timing-function:linear;
+			-webkit-animation-delay:2s;
+			-webkit-animation-iteration-count:infinite;
+			-webkit-animation-direction:alternate;
+			-webkit-animation-play-state:running;
+		}
+		
+		@keyframes myfirst	/*div里定义了一个的动画变化过程*/	
+		{
+			0%   {background:red; left:0px; top:0px;}
+			25%  {background:yellow; left:200px; top:0px;}
+			50%  {background:blue; left:200px; top:200px;}
+			75%  {background:green; left:0px; top:200px;}
+			100% {background:red; left:0px; top:0px;}
+		}
+		
+		@-webkit-keyframes myfirst /* 为了兼容 Safari and Chrome */
+		{
+			0%   {background:red; left:0px; top:0px;}
+			25%  {background:yellow; left:200px; top:0px;}
+			50%  {background:blue; left:200px; top:200px;}
+			75%  {background:green; left:0px; top:200px;}
+			100% {background:red; left:0px; top:0px;}
+		}
+		//.html
+		<div><p><a href="www.baidu.com."> 百度</a></p></div>
+		/*现象是动着的 百度链接*/
+		CSS3的动画属性
+			@keyframes 		规定动画。 	
+			animation 		所有动画属性的简写属性，除了 animation-play-state 属性。 	
+			animation-name 		规定 @keyframes 动画的名称。 	
+			animation-duration 	规定动画完成一个周期所花费的秒或毫秒。默认是 0。 	
+			animation-timing-function 	规定动画的速度曲线。默认是 "ease"。 	
+			animation-delay 	规定动画何时开始。默认是 0。 	
+			animation-iteration-count 	规定动画被播放的次数。默认是 1。 	
+			animation-direction 	规定动画是否在下一周期逆向地播放。默认是 "normal"。 	
+			animation-play-state 	规定动画是否正在运行或暂停。默认是 "running"。
+	多列特性:(不详述)
+		column-count 	指定元素应该被分割的列数。
+		column-fill 	指定如何填充列
+		column-gap 	指定列与列之间的间隙
+		column-rule 	所有 column-rule-* 属性的简写
+		column-rule-color 	指定两列间边框的颜色
+		column-rule-style 	指定两列间边框的样式
+		column-rule-width 	指定两列间边框的厚度
+		column-span 	指定元素要跨越多少列
+		column-width 	指定列的宽度
+		columns 	设置 column-width 和 column-count 的简写
+	用户界面新特性: (不详述)
+		appearance 	允许您使一个元素的外观像一个标准的用户界面元素 	
+		box-sizing 	允许你以适应区域而用某种方式定义某些元素 	
+		icon 		为创作者提供了将元素设置为图标等价物的能力。 	
+		nav-down 	指定在何处使用箭头向下导航键时进行导航 	
+		nav-index 	指定一个元素的Tab的顺序 
+		nav-left 	指定在何处使用左侧的箭头导航键进行导航 	
+		nav-right 	指定在何处使用右侧的箭头导航键进行导航 	
+		nav-up 		指定在何处使用箭头向上导航键时进行导航 	
+		outline-offset 	外轮廓修饰并绘制超出边框的边缘 	
+		resize 		指定一个元素是否是由用户调整大小
+	css3新特性例子,见 html5_learn -> css_learn -> csstest2.html:
+		关于图片的
+		关于导航的
+		关于@media 应用的 !!!
+
+
+
+
+
+
+
+
+
+20170919
+学习XML
+	基本认识:
+		XML 被设计用来传输和存储数据。
+		XML 不会做任何事情
+		XML 把数据从 HTML 分离
+		XML 文档形成一种树结构
+			<root>
+			<child>
+			<subchild>.....</subchild>
+			</child>
+			</root>
+		XML 属性值必须加引号:
+			<note date="12/11/2007">
+		xml 实体引用:
+			内容中含 <,>,&,'等等特定符号作为实体内容时,需要使用 &it,&gt,&amp等等来代替
+			&lt; 	< 	less than
+			&gt; 	> 	greater than
+			&amp; 	& 	ampersand
+			&apos; 	' 	apostrophe
+			&quot; 	" 	quotation mark
+		XML 中的注释:<!-- This is a comment -->
+		XML 以 LF 存储换行
+			在 Windows 应用程序中，换行通常以一对字符来存储：回车符（CR）和换行符（LF）。
+			在 Unix 和 Mac OSX 中，使用 LF 来存储新行。
+		xml+DTD:
+			拥有正确语法的 XML 被称为"形式良好"的 XML。
+			通过 DTD 验证的XML是"合法"的 XML
+		xml验证: http://www.runoob.com/xml/xml-validator.html
+		XML命名空间,为了区分html段符号和用户自定义的段符号 使用xmlns 定义前缀,前缀代表一个命名空间例如:
+			<h:table xmlns:h="http://www.w3.org/TR/html4/">
+			<h:tr>
+			<h:td>Apples</h:td>
+			<h:td>Bananas</h:td>
+			</h:tr>
+			</h:table>
+			//又例如:
+			<root xmlns:h="http://www.w3.org/TR/html4/"
+			xmlns:f="http://www.w3cschool.cc/furniture">
+			<h:table>
+			<h:tr>
+			<h:td>Apples</h:td>
+			<h:td>Bananas</h:td>
+			</h:tr>
+			</h:table>
+			<f:table>
+			<f:name>African Coffee Table</f:name>
+			<f:width>80</f:width>
+			<f:length>120</f:length>
+			</f:table>			
+			</root> 
+		ajax的实现方式就是,
+			创建一个 XMLHttpRequest 对象,提交到服务器!!
+			服务器分析完返回一个xml文件
+			客户端浏览器的xml parser解析器 会把 XML 文档转换为 XML DOM 对象(可通过 JavaScript 操作的对象)
+			DOM（Document Object Model 文档对象模型）定义了访问和操作文档的标准方法。
+			以下是一个演示获取 服务器xml文件后 转为 DOM对象 然后访问显示的例子:xmltest.html
+			其中往服务器请求的test_ajax_cd_catalog.xml 在php_learn里也有,查看
+/*xmltest.html start*/
+<!DOCTYPE html>
+<html>
+<head>
+	<script>
+	if (window.XMLHttpRequest)	
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xmlhttp=new XMLHttpRequest();		<!--创建一个 XMLHttpRequest 对象-->
+	  }
+	else
+	  {// code for IE6, IE5
+	  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	  }
+	xmlhttp.open("GET","test_ajax_cd_catalog.xml",false);
+	xmlhttp.send();				<!--提交到服务器-->
+	xmlDoc=xmlhttp.responseXML; 		<!-- 获得返回的xml文件内容 -->
+	
+	x=xmlDoc.getElementsByTagName("CD");	<!-- 提取其中内容变为DOM对象 -->
+	i=0;
+	
+	function displayCD()
+	{
+	artist=(x[i].getElementsByTagName("ARTIST")[0].childNodes[0].nodeValue);
+	title=(x[i].getElementsByTagName("TITLE")[0].childNodes[0].nodeValue);
+	year=(x[i].getElementsByTagName("YEAR")[0].childNodes[0].nodeValue);
+	txt="Artist: " + artist + "<br>Title: " + title + "<br>Year: "+ year;
+	document.getElementById("showCD").innerHTML=txt;
+	}
+	
+	function next()
+	{
+	if (i<x.length-1)
+	  {
+	  i++;
+	  displayCD();
+	  }
+	}
+	
+	function previous()
+	{
+	if (i>0)
+	  {
+	  i--;
+	  displayCD();
+	  }
+	}
+	</script>
+</head>
+<body onload="displayCD()">	
+	<div id='showCD'></div><br>
+	<input type="button" onclick="previous()" value="<<" />
+	<input type="button" onclick="next()" value=">>" />
+</body>
+</html>
+/*xmltest.html end*/	
+		XML CDATA
+			XML 文档中的所有文本均会被解析器解析,只有 CDATA 区段中的文本会被解析器忽略。
+			像 "<" 和 "&" 字符在 是逃不过 xml parser 的解析的.
+			所以特别的不应被parser分析的属于被传递的数据的的内容,可以透过CDATA来保护!!
+			CDATA 部分由 "<![CDATA[" 开始，由 "]]>" 结束,例如:
+				<script>
+				<![CDATA[
+				function matchwo(a,b)
+				{
+				if (a < b && a < 0) then
+				{
+				return 1;
+				}
+				else
+				{
+				return 0;
+				}
+				}
+				]]>
+				</script>
+			CDATA 部分不能包含字符串 "]]>"。也不允许嵌套的 CDATA 部分。
+			标记 CDATA 部分结尾的 "]]>" 不能包含空格或换行。
+		xml + DOM 高级:
+			获取元素的值 例子
+			 txt=xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue;
+			获取属性的值 例子
+			 txt=xmlDoc.getElementsByTagName("title")[0].getAttribute("lang"); 
+			改变元素的值 例子
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.nodeValue="Easy Cooking"; 
+			创建新的属性
+			x=xmlDoc.getElementsByTagName("book");
+			for(i=0;i<x.length;i++)
+			{
+				x[i].setAttribute("edition","first");
+			} 
+			创建元素 例子
+			XML DOM 的 createElement() 方法创建一个新的元素节点。
+			XML DOM 的 createTextNode() 方法创建一个新的文本节点。
+			XML DOM 的 appendChild() 方法向节点添加子节点（在最后一个子节点之后）。
+			下面的实例创建了一个新的元素（<edition>），带有如下文本：First，然后把它添加到第一个 <book> 元素：
+				newel=xmlDoc.createElement("edition");
+				newtext=xmlDoc.createTextNode("First");
+				newel.appendChild(newtext);				
+				x=xmlDoc.getElementsByTagName("book");
+				x[0].appendChild(newel); 
+			删除元素
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.removeChild(x.childNodes[0]); 		
+	一个xml实例:
+		<?xml version="1.0" encoding="UTF-8"?>	//XML 声明:它定义XML版本（1.0）和所使用的编码 UTF-8,可选部分，若存在必须文档的第一行
+		<note>			//下一行描述文档的根元素
+		<to>Tove</to>
+		<from>Jani</from>
+		<heading>Reminder</heading>
+		<body>Don't forget me this weekend!</body>
+		</note>			//最后一行定义根元素的结尾
+
+
+
+
+
+
+20170920
+研究建立一个用户系统!!!
+win7安装了 wamp !!(win+apache+mysql+php)
+	然而并没有成功转换 网站根目录,暂时不管
+网上下了一个电商网站 (汉潮b2b2c)
+	使用 Thinkphp框架,需要ioncube的php插件
+	按百度成功安装 ioncube 
+打开 Thinkphp 调试:
+	在网站的 主入口文件 index.php 修改:
+		define("APP_DEBUG",true);
+		require './ThinkPHP/ThinkPHP.php';
+登录网站出错: Thinkphp 框架错误:	
+	SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: YES)
+	问题根源:由于wamp第一次安装mysql,还没有设置mysql的root密码!!
+	浏览器登录 localhost/phpmyadmin 用户名添root,不用密码就可登录,登录后该root账户密码
+	查看 网站根目录: config.inc.php 的 mysql的帐号密码,和我们设置的一样!!
+	通过phpmyadmin:
+		建立一个网站指定的数据库:hanchao_b2b2c25,
+		倒入数据备份: hanchao_b2b2c.sql
+	重新登录localhost 成功!!! 
+
+
+
+
+
+
+
+
+20170921
+php中文网 找到了多个可使用实战例子
+账户系统1笔记(users_reg_login): http://www.php.cn/code/3980.html
+	测试过程中,验证码出现过问题,归根是php session问题,重视!
+	测试过过程中 突然抽风了,测试通过!!!
+	只记录v2版本的:login_v2.php logincheck_v2.php register_v2.php regcheck.php pic.php
+	其中 pic.php 是关于生成验证码的!!
+	另外对应的 mysql 数据库表单 新建sql命令:
+		DROP DATABASE IF EXISTS userdb_v2;
+		CREATE DATABASE userdb_v2 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+		USE userdb_v2;
+		CREATE TABLE user(
+		id int(11) NOT NULL AUTO_INCREMENT,
+		username varchar(30) DEFAULT NULL,
+		userpwd varchar(32) DEFAULT NULL,
+		createtime int(11) NOT NULL,
+		createip int(11) DEFAULT NULL,
+		PRIMARY KEY (id)
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+		insert into user(username,userpwd) values('admin','admin');
+	还有注意 insert into 语句的书写方式;
+	还有根据 实际情况更改 文件中的数据库 登录账户密码:
+php + html5 websocket 聊天室:(php_learn/websoket-php-chat):https://my.oschina.net/babyanzichen/blog/806864
+	安装测试 kingders机: 
+		terminal运行命令: php websocket.php , (各种错误,所以失败,因为django占用了8000口??)
+		(退出django后,重新执行命令,虽然也有错,但这次可用了)
+		还有这里占用的 8000 端口 跟 localhost的http服务 8099 端口不冲突!!!
+		然后本机登录localhost:8099/html/html5_learn/php_learn/websoket-php-chat/clint.html进入聊天室
+		外网用户也可以通过http://410833c8.nat123.net:18099/html/html5_learn/php_learn/websoket-php-chat/clint.html
+		但是nat123并没有吧 8000 口映射出来,所以不知道为什么外网可以访问没有被映射的端口
+		最后发现,websocket并没有通过nat123映射到外网,因为client.html url还是 127.0.0.1:8000!!!!!
+	websocket需要另外映射到外网
+		现在设置websocket 的端口为40000,即改服务端 websocket.php
+			$sk=new Sock('127.0.0.1',40000);
+		nat123 官网上建立映射端口:
+			  重点      名称	映射线路    内网地址    内网端口	  外网域名	      外网端口
+			非80网站 -> websocket -> nat123 -> localhost -> 40000 -> 18084898.nat123.cc -> 49931
+		然后client.html的 var url改成以下样子
+		var url='ws://18084898.nat123.cc:49931';	//这是nat123 映射websocket的地址
+		最后成功映射,外网电脑可以接入聊天室
+	安装测试 公司的wamp环境机:
+		登录localhost指定websoket-php-chat位置 点击 websocket.php 启动 websocket服务
+		登录 client.html 客户端 			 
+	先单独测试 websocket!!
+		
+session深入:(php_learn/session)
+	测试session跨文本低级操作:
+		测试页使用 ajax GET方法,给session处理文本发无意义数据,session处理文本只是改变了session值
+		然后测试页成功显示了改变了的session值!!
+		本地登录localhost,得到的session内容,与通过nat123映射的外网登录,得到的session值互为独立!!
+websocket深入:
+	websocket与http是同阶别的协议
+客户端:
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Web sockets test</title>
+    <script src="jquery-min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var ws;
+        function ToggleConnectionClicked() {          
+                try {
+                    ws = new WebSocket("ws://127.0.0.1:2000");//连接服务器        
+                    ws.onopen = function(event){alert("已经与服务器建立了连接\r\n当前连接状态："+this.readyState);};
+                    ws.onmessage = function(event){alert("接收到服务器发送的数据：\r\n"+event.data);};
+                    ws.onclose = function(event){alert("已经与服务器断开连接\r\n当前连接状态："+this.readyState);};
+                    ws.onerror = function(event){alert("WebSocket异常！");};
+                } catch (ex) {
+                    alert(ex.message);      
+                }
+        };
+ 
+        function SendData() {
+            try{
+                var content = document.getElementById("content").value;
+                if(content){
+                    ws.send(content);
+                }
+                
+            }catch(ex){
+                alert(ex.message);
+            }
+        };
+ 
+        function seestate(){
+            alert(ws.readyState);
+        }
+       
+    </script>
+</head>
+<body>
+   <button id='ToggleConnection' type="button" onclick='ToggleConnectionClicked();'>连接服务器</button><br /><br />
+   <textarea id="content" ></textarea>
+    <button id='ToggleConnection' type="button" onclick='SendData();'>发送我的名字：beston</button><br /><br />
+    <button id='ToggleConnection' type="button" onclick='seestate();'>查看状态</button><br /><br />
+
+</body>
+</html>
+
+服务器端:
+class WS {
+    var $master;  // 连接 server 的 client
+    var $sockets = array(); // 不同状态的 socket 管理
+    var $handshake = false; // 判断是否握手
+
+    function __construct($address, $port){
+        // 建立一个 socket 套接字
+        $this->master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)   
+            or die("socket_create() failed");
+        socket_set_option($this->master, SOL_SOCKET, SO_REUSEADDR, 1)  
+            or die("socket_option() failed");
+        socket_bind($this->master, $address, $port)                    
+            or die("socket_bind() failed");
+        socket_listen($this->master, 2)                               
+            or die("socket_listen() failed");
+
+        $this->sockets[] = $this->master;
+
+        // debug
+        echo("Master socket  : ".$this->master."\n");
+
+        while(true) {
+            //自动选择来消息的 socket 如果是握手 自动选择主机
+            $write = NULL;
+            $except = NULL;
+            socket_select($this->sockets, $write, $except, NULL);
+
+            foreach ($this->sockets as $socket) {
+                //连接主机的 client 
+                if ($socket == $this->master){
+                    $client = socket_accept($this->master);
+                    if ($client < 0) {
+                        // debug
+                        echo "socket_accept() failed";
+                        continue;
+                    } else {
+                        //connect($client);
+                        array_push($this->sockets, $client);
+                        echo "connect client\n";
+                    }
+                } else {
+                    $bytes = @socket_recv($socket,$buffer,2048,0);
+                    print_r($buffer);
+                    if($bytes == 0) return;
+                    if (!$this->handshake) {
+                        // 如果没有握手，先握手回应
+                        $this->doHandShake($socket, $buffer);
+                        echo "shakeHands\n";
+                    } else {
+                    
+                        // 如果已经握手，直接接受数据，并处理
+                        $buffer = $this->decode($buffer);
+                        //process($socket, $buffer); 
+                        echo "send file\n";
+                    }
+                }
+            }
+        }
+    }
+    
+    function dohandshake($socket, $req)
+    {
+        // 获取加密key
+        $acceptKey = $this->encry($req);
+        $upgrade = "HTTP/1.1 101 Switching Protocols\r\n" .
+                   "Upgrade: websocket\r\n" .
+                   "Connection: Upgrade\r\n" .
+                   "Sec-WebSocket-Accept: " . $acceptKey . "\r\n" .
+                   "\r\n";
+
+        echo "dohandshake ".$upgrade.chr(0);           
+        // 写入socket
+        socket_write($socket,$upgrade.chr(0), strlen($upgrade.chr(0)));
+        // 标记握手已经成功，下次接受数据采用数据帧格式
+        $this->handshake = true;
+    }
+    
+    
+    function encry($req)
+    {
+        $key = $this->getKey($req);
+        $mask = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+        return base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
+    }
+    
+    function getKey($req) 
+    {
+        $key = null;
+        if (preg_match("/Sec-WebSocket-Key: (.*)\r\n/", $req, $match)) { 
+            $key = $match[1]; 
+        }
+        return $key;
+    }
+    
+    // 解析数据帧
+    function decode($buffer)  
+    {
+        $len = $masks = $data = $decoded = null;
+        $len = ord($buffer[1]) & 127;
+
+        if ($len === 126)  {
+            $masks = substr($buffer, 4, 4);
+            $data = substr($buffer, 8);
+        } else if ($len === 127)  {
+            $masks = substr($buffer, 10, 4);
+            $data = substr($buffer, 14);
+        } else  {
+            $masks = substr($buffer, 2, 4);
+            $data = substr($buffer, 6);
+        }
+        for ($index = 0; $index < strlen($data); $index++) {
+            $decoded .= $data[$index] ^ $masks[$index % 4];
+        }
+        return $decoded;
+    }
+    
+    // 返回帧信息处理
+    function frame($s) 
+    {
+        $a = str_split($s, 125);
+        if (count($a) == 1) {
+            return "\x81" . chr(strlen($a[0])) . $a[0];
+        }
+        $ns = "";
+        foreach ($a as $o) {
+            $ns .= "\x81" . chr(strlen($o)) . $o;
+        }
+        return $ns;
+    }
+
+    // 返回数据
+    function send($client, $msg)
+    {
+        $msg = $this->frame($msg);
+        socket_write($client, $msg, strlen($msg));
+    }
+}
+
+   测试    $ws = new WS("127.0.0.1",2000);
+
+
+php服务端2
+//socket.php
+set_time_limit(0);//永不超时
+class socket{
+    private $host = '127.0.0.1';
+    private $port = 8080;
+    private $maxuser = 10;
+    public  $accept = array(); //连接的客户端
+    private $cycle = array(); //循环连接池
+    private $isHand = array();//握手信息
+
+
+    //加载socket配置
+    function __construct($host, $port, $max) {
+        $this->host = $host;
+        $this->port = $port;
+        $this->maxuser = $max;
+    }
+
+    //挂起socket
+    public function start_server() {
+        //创建一个socket
+        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        //配置socket
+        socket_set_option($this->socket, SOL_SOCKET, SO_REUSEADDR, TRUE);
+        //绑定接口，最多10个人连接，超过的客户端连接会返回WSAECONNREFUSED错误
+        socket_bind($this->socket, $this->host, $this->port);
+        //监听接口
+        socket_listen($this->socket, $this->maxuser);
+        while(TRUE) {
+            //获取所有socket连接
+            $this->cycle = $this->accept;
+            $this->cycle[] = $this->socket;
+
+            //阻塞用，有新连接时才会结束
+            socket_select($this->cycle, $write, $except, null);
+            foreach ($this->cycle as $k => $v) {
+                //当socket运行到连接池最后一位时，开始添加连接
+                if($v === $this->socket) {
+                    //如果socket连接失败，跳出本次循环
+                    if (($accept = socket_accept($v)) < 0) {
+                        continue;
+                    }
+                    //连接成功加入连接池
+                    $this->add_accept($accept);
+                    continue;
+                }
+
+                //在连接池中搜索socket连接ID
+                $acceptId = array_search($v, $this->accept);
+                //如果连接没有保存至连接池，跳出本次循环
+                if ($acceptId === NULL) {
+                    continue;
+                }
+                //没消息的socket就断开
+                if (!@socket_recv($v, $data, 1024, 0) || !$data) {
+                    $this->close($v);
+                    continue;
+                }
+                //检查是否握手
+                if (!$this->isHand[$acceptId]) {
+                    //进行握手
+                    $this->upgrade($v, $data, $acceptId);
+                    continue;
+                }
+                //将数据进行解码
+                $data = $this->decode($data);
+                //将信息返回给客户端
+                $this->send_to_user($v,$data);
+            }
+            sleep(1);
+        }
+    }
+
+    /**
+     * 新建一个连接
+     * @param $accept 套接号
+     */
+    private function add_accept($accept) {
+        $this->accept[] = $accept;
+        $accept = array_keys($this->accept);
+        //获取新连接的key值，用于跟握手信息绑定
+        $acceptId = end($accept);
+        //添加初次连接用户握手信息
+        $this->isHand[$acceptId] = FALSE;
+    }
+
+
+    /**
+     * 关闭一个连接
+     * @param $accept 套接号
+     */
+    private function close($accept) {
+        //在连接池中搜索套接号
+        $acceptId = array_search($accept, $this->accept);
+        //断开socket连接
+        socket_close($accept);
+        //销毁变量
+        unset($this->cycle[$acceptId]);
+        unset($this->accept[$acceptId]);
+        unset($this->isHand[$acceptId]);
+    }
+
+    /**
+     * 响应升级协议，与websocket进行握手
+     * @param $accept 套接号
+     * @param $data websocket发送的数据
+     * @param $acceptId 与套接号绑定的Id
+     */
+    private function upgrade($accept, $data, $acceptId) {
+        //用正则表达式获取websocket传输过来的key值
+        if (preg_match("/Sec-WebSocket-Key: (.*)\r\n/",$data,$match)) {
+            //服务端生成对应key值返回
+            $key = base64_encode(sha1($match[1] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
+            $upgrade  = "HTTP/1.1 101 Switching Protocol\r\n" .
+                "Upgrade: websocket\r\n" .
+                "Connection: Upgrade\r\n" .
+                "Sec-WebSocket-Accept: " . $key . "\r\n\r\n";  //必须以两个回车结尾
+            //向套接口写入数据
+            socket_write($accept, $upgrade, strlen($upgrade));
+            $this->isHand[$acceptId] = TRUE;
+        }
+    }
+
+    /**
+     * 编码信息
+     * @param $data 需要编码的数据
+     */
+    private function frame($data){
+        //将数据转为数组，一个元素长度最高为125
+        $array = str_split($data, 125);
+        //添加头文件信息，不然前台无法接受
+        if (count($array) == 1){
+            return "\x81" . chr(strlen($array[0])) . $array[0];
+        }
+        $ns = "";
+        foreach ($data as $v){
+            $ns .= "\x81" . chr(strlen($v)) . $v;
+        }
+        return $ns;
+    }
+
+    /**
+     * 按照websocket协议进行解码
+     * @param $buffer 需要解码的数据
+     */
+    private function decode($buffer) {
+        $len = $masks = $data = $decoded = null;
+        //获取传递过来数据长度
+        $len = ord($buffer[1]) & 127;
+        if ($len === 126) {
+            $masks = substr($buffer, 4, 4);
+            $data = substr($buffer, 8);
+
+        }
+        else if ($len === 127) {
+            $masks = substr($buffer, 10, 4);
+            $data = substr($buffer, 14);
+        }
+        else {
+            $masks = substr($buffer, 2, 4);
+            $data = substr($buffer, 6);
+        }
+        //
+        for ($index = 0; $index < strlen($data); $index++) {
+            $decoded .= $data[$index] ^ $masks[$index % 4];
+        }
+        return $decoded;
+    }
+
+    /**
+     * 向所有连接至socket的用户发送消息
+     * @param $accept 套接号
+     * @param $data 发送的数据
+     */
+    private function send_to_user($accept, $data){
+        //添加头文件信息
+        $data = $this->frame($data);
+        socket_write($accept, $data, strlen($data));
+
+    }
+}
+调用:
+//index.php
+require('socket.php');
+//设置连接信息
+$ws = new socket('192.168.0.114', '8080', 10);
+//开启socket服务端
+$ws->start_server();
+
+
+
+
+
+
+
+20170930
+laya游戏开发!!!
+使用layaide,使用javascript开发
+发布了的游戏包目录要放到体系完备的web服务器里,通过域名端口登录打开才行, 直接把文件拉到浏览器,并不会很好执行!!!
+laya项目结构:
+	.laya 		// 编译配置文件夹
+	bin		// 项目开发过程中,运行调试执行文件的所在地
+	 |---libs	// 可执行文件用到的 js 库,编译后,自动添加必要的库文件
+	 |---res	// 放置需要使用的各种资源文件夹
+	 |---index.html	// 项目开发过程中,主运行调试执行文件,注意在这里引用了src->LayaSample.js才是真正的游戏源码文件
+	libs		// 其他库文件
+	release		// 发布的完整游戏包所在文件夹
+	src		// 我们开发的游戏的 源代码 文件夹
+	 |--LayaSample.js	//新建项目时的默认 游戏源码文件,用户直接从修改这个文件开始 实现游戏!!
+以uxi下是一个 完整的laya项目 例子:
+/* LayaSample.js start */
+(function()
+{
+	var Sprite  = Laya.Sprite;
+	var Stage   = Laya.Stage;
+	var Texture = Laya.Texture;
+	var Browser = Laya.Browser;
+	var Handler = Laya.Handler;
+	var WebGL   = Laya.WebGL;
+
+	(function()
+	{
+		// 不支持WebGL时自动切换至Canvas
+		Laya.init(Browser.clientWidth, Browser.clientHeight, WebGL);
+
+		Laya.stage.alignV = Stage.ALIGN_MIDDLE;
+		Laya.stage.alignH = Stage.ALIGN_CENTER;
+
+		Laya.stage.scaleMode = "showall";
+		Laya.stage.bgColor = "#232628";
+
+		showApe();
+	})();
+
+	function showApe()
+	{
+		// 方法1：使用loadImage
+		var ape = new Sprite();
+		Laya.stage.addChild(ape);
+		ape.loadImage("res/ui/button1.png");
+
+		// 方法2：使用drawTexture
+		Laya.loader.load("res/ui/button2.png", Handler.create(this, function()
+		{
+			var t = Laya.loader.getRes("res/ui/button2.png");
+			var ape = new Sprite();
+			ape.graphics.drawTexture(t, 0, 0);
+			Laya.stage.addChild(ape);
+			ape.pos(200, 0);
+		}));
+	}
+})();
+/* LayaSample.js end */
+项目完整,用户只是修改了 LayaSample.js 和添加了 res里的内容,其中需要调用的 图片.png 放在 bin->res->ui 目录里!!
+LayaSample.js 里的代码完整, 是从laya官网截下来 button_api演示 内容!!
+由于项目完整,所以,可以正常调试执行和发布成完整游戏包
+进一步讨论 LayaSample.js:
+(function()){})(); 既定义了函数,又执行了函数:
+	function()){} 定了函数, (..)();执行了这个函数
+laya引擎库函数架构笔记:
+	stage 舞台类,也称背景类.
+		注意Laya.Stage 与Laya.stage 指代的内容是不一样的
+	sprite 一般显示对象类, 
+		注意Laya.Sprite 与Laya.sprite 指代的内容是不一样的
+		一个一般显示对象参数一般用 ape 表示
+		pos是 ape位置
+		pivot 是 ape轴心的位置
+		可以相嵌组成 组合的一般显示对象!! 一个一般显示对象参数一般用 ape 表示
+		var ape = new Laya.Sprite();	
+		var ape1 = new Laya.Sprite();
+		ape.addChild(ape1);
+	swf,json动画先跳过
+	
+开发内容:
+	1,按键随机步数, 图标去ape 到指定位置!!
+	2,即时录音,即时传送,到达音频压入队列,非录音时,即空闲,播放音频,完整播完才销掉,中途被录音操作中断后,重新播放被中断音频
+	3,
+
+
+
+
+20170930
+layabox 学习:
+	基础laya库接口:
+	laya.core.js是核心包，封装了显示对象渲染，事件，时间管理，时间轴动画，缓动，消息交互，socket，
+		本地存储，鼠标触摸，声音，加载，颜色滤镜，位图字体等。
+	laya.webgl.js 封装了webgl渲染管线，如果使用webgl渲染，可以在初始化时调用Laya.init(1136,640,laya.webgl.WebGL);
+	laya.ani.js是动画模块，包含了swf动画，骨骼动画等。
+	laya.filter.js包含更多webgl滤镜，比如外发光，阴影，模糊以及更多。
+	laya.html.js封装了html动态排版功能。
+	laya.ui.js 提供了制作UI的各种组件实现。
+	laya.tilemap.js 提供tileMap解析支持。
+Audio属于dom元素，带有ui界面，在移动端Audio属于边下载边播放，适合声音文件比较大的文件，
+	但是Audio在移动端会有手势的限制，gesture-requirement-for-media-playback属性表明必须有用户的手势操作才可以播放。
+理解了如何使用 ide 建立ui 并使用到页游里去
+	先讨论 ui编辑器的:
+		项目框看到我们这个页游建立了的 ui页面 或者是 动画项目,
+			右键新建,可以新建 ui页面,动画等可显示项目!!
+		层级框看到的是 指定的一个ui页面或者动画项目里的资源列表
+			除了典型的 button,checkbox,image,典型组件外,
+			还有box, list 等复合容器组件,还可以看到复合组件的层级结构
+			例如我做的一个 list 组件是这样的层级结构:
+				list
+				| box 
+				| | image
+				| | checkbox
+				| | label
+				| | label
+			即一个列表组组件是由 多个box单元构成的, 在预览窗选中list组件后, 右边的属性框的内容是这个list的属性设置
+			repeatX 是指 横向显示多少个 box单元,repeatY 是指纵向显示多少个 box单元,
+			一般,repeatX,Y 间接设计了真实情况下这个 list复合组件的显示占用空间,repeatX,Y越大,显示占用空间越大
+			但是list复合组件,也有 一个 绝对的占用空间范围,在演示框选中list组件后,调整红框大小设置
+			list包含的内容多时,自然需要滚动条, vScrollBarSkin 是设置滚动条皮肤的,
+			在这里,我们直接把 资源框里的vscoll.png拉到这个属性框就可以实现了!!
+		属性框:
+			每个在预览窗选中的 ui组件,右边的属性框都会显示对应的属性设置内容,其中
+			var 是重要参数,ui项目上 每个独立组件都需要设置,因为是供程序识别的!!
+			    对于 独立的复合组件,一般只要根节点的容器组件需要设置,其字节点的容器组件或者普通组件不需要
+			name 在一个 符合组建组件里, 每个子节点的部分一般都需要设置,方便复合组件内的识别
+		资源框,
+			就是设置ui时用到的内容,关于如何添加自己的内容到里面去,后面探讨
+		设计好自己的ui后, F12 提交,然后系统自动根据内容生成ui类
+	然后来到代码编辑窗口!!
+		程序一般要做的是:
+			laya.init()	//初始化环境
+			laya.stage.xxxx = xx //设置stage
+			laya.loader.load()  //预加载资源
+				加载资源很有学问, 许多图片集成一张大图,然后通过,json 或者atlias 分割,
+				所以加载指定的 json 或者atlias
+				当然也有 独立的资源图片, 这就要加载相关的图片
+				例如
+				Laya.loader.load("res/atlas/comp.json", Handler.create(this, onLoaded),null, Loader.ATLAS);
+				例如
+        			Laya.loader.load(["res/atlas/ListPage.atlas","res/atlas/template/ButtonTab.atlas"], Handler.create(this, onLoaded));
+				例如
+				Laya.loader.load("res/atlas/buttonA.png", Handler.create(this, onLoaded),null, Loader.ATLAS);
+			laya.loader.load里 有个 Handler.create( ) 
+				表示预加载资源后做什么,很多时候是加载页面的工作了,比如上述例子的 onLoaded,
+			onloader就是自定义的加载页面函数,一般内容都是
+				Laya.stage.addChild();把内容加载到页面上
+		然后看看如何加载 使用 ui编辑器 做好的 ui页面!!
+			ui页面做好后 f12键会 自动生成一个函数!!!
+			比如做了个 opq.ui 会自动生成一个 opqUI 函数
+			像这样我们就可以加载和使用 ui编辑器 做好的 ui页面
+				ListDemoView = new opqUI();	//使用opqUI函数启动一个UI页
+				Laya.stage.addChild(ListDemoView); //把这个ui页 加载到舞台上!!
+			opq.ui建了两个按钮,一个按钮的var称add,一个是del,以下就可以设置按钮点击后的响应内容!
+		        //侦听增加按钮点击事件
+ 		        ListDemoView.add.on(Event.CLICK,this,onAddClick);
+		        //侦听删除按钮点击事件
+ 		        ListDemoView.del.on(Event.CLICK,this,onRemoveClick);
+			opq.ui建了一个list 复合组件 var属性值是 _list 以下是关于list组件的相关附加处理内容!
+			//我们list的内容单元是box复合组件,array 便是这个box组件数组,这里相当于赋值一个数组,即告诉到底列表里有多少项内容
+			ListDemoView._list.array = arr;
+			//list渲染函数 实时渲染函数,每时没刻都根据实际情况,构造实时内容
+			ListDemoView._list.renderHandler = new Handler(this, onRender);
+        		//添加单元格数据源
+        		ListDemoView._list.addItem({listNumber: {text:arr.length+1}});
+		继承ui启动函数的做法!!!
+			function TestUI(){.....}
+			Laya.class(TestUI, "test_ui", opqUI);
+			Laya.stage.addChild(new TestUI());
+			这里 TestUI 是一个独立的函数,但里面只写了一些ui页面组件的响应函数,这是集成前的TestUI()
+			class() 把 opqUI这个ui启动函数 集成到 TestUI函数上,即生成一个新的TestUI函数代替旧的TestUI
+			然后就可以通过 Laya.stage.addChild(new TestUI()); 而不是 Laya.stage.addChild(new opqUI());
+			的方式,启动页面并加载到舞台!!
+以下是加载ui编辑器编出来的ui,并使用的代码的一个例子:
+(function()
+{
+    var Stage= Laya.Stage;
+    var Handler= Laya.Handler;
+    var Loader= Laya.Loader;
+    var WebGL = Laya.WebGL;
+
+    var Event   = Laya.Event;
+    var CheckBox = Laya.CheckBox;
+
+
+     var ListDemoView;
+     var arr;
+    (function()
+    {
+         Laya.init(640,1200,WebGL);
+         Laya.stage.bgColor = "#ffffff";
+         Laya.stage.scaleMode = Stage.SCALE_SHOWALL;
+         //预加载资源文件后执行回调
+         Laya.loader.load("res/atlas/comp.json", Handler.create(this, onLoaded),null, Loader.ATLAS);
+    })();
+    function onLoaded(){
+        ListDemoView = new learnUI();
+        Laya.stage.addChild(ListDemoView);
+        //获得List模拟数据，并渲染
+         getListData(); 
+        //侦听增加按钮点击事件
+         ListDemoView.add.on(Event.CLICK,this,onAddClick);
+        //侦听删除按钮点击事件
+         ListDemoView.del.on(Event.CLICK,this,onRemoveClick);
+    }
+    function getListData(){
+        //添加list数据
+        arr = [];
+        for (var i  = 1; i <= 30; i++) {
+            arr.push({listNumber: {text:i}});
+           }
+        //ListDemoView._list.vScrollBarSkin='';//添加list滚动条功能（UI不可显示）
+        ListDemoView._list.array = arr;//数据赋值
+         //list渲染函数
+          ListDemoView._list.renderHandler = new Handler(this, onRender);
+         //mouseHandler: list单元格鼠标事件处理器
+          ListDemoView._list.mouseHandler = new Handler(this,onMouse);
+    }
+    function onRender(cell,index){
+         //如果索引不再可索引范围，则终止该函数
+        if(index < arr.length)return;
+        //获取当前渲染条目的数据
+        var data = arr[index];
+        //根据子节点的名字listNumber，获取子节点对象。         
+        var listNumber = cell.getChildByName("listNumber") ;
+        //label渲染列表文本（序号）
+        listNumber.text=data.listNumber.text;
+        //获取当前渲染条目的check组件
+        var check=cell.getChildByName("check");
+        //根据isCheck的值，确定当前check组件是否为勾选状态（可以避免出现其他多余的选中状态）
+        if(data.isCheck)
+        {
+                check.selected=true;
+        }
+        else
+        {
+                check.selected=false;
+        }
+    }
+    function onAddClick(){
+         //添加单元格数据源
+         ListDemoView._list.addItem({listNumber: {text:arr.length+1}});
+    }
+    function onRemoveClick(){
+      //创建一个新的数组，存放移除条目后的数据
+      var temp= [];
+      for(var i=0;i<arr.length;i++)
+      {
+      //将非选中状态的条目数据存储起来
+            if(!arr[i].isCheck)
+            {
+                  temp.push(arr[i]);
+            }
+      }
+      arr = temp;
+      //将新的数组赋值给list
+      ListDemoView._list.array = arr;
+    }
+    function onMouse(e,index)
+    {
+         //鼠标单击事件触发
+         if(e.type == Event.CLICK)
+         {
+              //判断点击事件类型,如果点中的是checkBox组件执行
+            if((e.target) instanceof CheckBox)
+            {
+                 //记录当前条目所包含组件的数据信息(避免后续删除条目后数据结构显示错误)
+                var tempObj = arr[index];
+                 //根据check的选中状态，设置条目的数据信息
+                 if((e.target).selected)
+                 {
+             ListDemoView._list.setItem(index,{listNumber:{text:tempObj.listNumber.text} ,isCheck:true});
+                 }
+                 else
+                 {
+             ListDemoView._list.setItem(index,{listNumber:{text:tempObj.listNumber.text},isCheck:false});
+                 }
+            }
+         }
+      }
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20171008
+XML 的 DTD:
+	DTD一般定义出自定义的xml格式规范的作为特定格式,使易于管理
+	DTD（文档类型定义）的作用是定义 XML 文档的合法构建模块。
+	实例: xxx.xml文件
+		<?xml version="1.0"?>
+		<!DOCTYPE note [				//定义此文档是 note 类型的文档。
+		<!ELEMENT note (to,from,heading,body)>		//定义 note 元素有四个元素："to、from、heading,、body"
+		<!ELEMENT to (#PCDATA)>			//定义 to 元素为 "#PCDATA" 类型,意思是被解析的字符数据（parsed character data）
+		<!ELEMENT from (#PCDATA)>		//...
+		<!ELEMENT heading (#PCDATA)>		//...
+		<!ELEMENT body (#PCDATA)>		//...
+		]>
+		<note>
+		<to>Tove</to>
+		<from>Jani</from>
+		<heading>Reminder</heading>
+		<body>Don't forget me this weekend</body>
+		</note> 
+	DTD 可被成行地声明于 XML 文档中，也可作为一个外部引用。
+	实例: xxx2.xml文件
+		<?xml version="1.0"?>
+		<!DOCTYPE note SYSTEM "note.dtd">
+		<note>
+		  <to>Tove</to>
+		  <from>Jani</from>
+		  <heading>Reminder</heading>
+		  <body>Don't forget me this weekend!</body>
+		</note> 
+	其中 note.dtd 文件
+		<!ELEMENT note (to,from,heading,body)>
+		<!ELEMENT to (#PCDATA)>
+		<!ELEMENT from (#PCDATA)>
+		<!ELEMENT heading (#PCDATA)>
+		<!ELEMENT body (#PCDATA)> 
+	DTD详细:
+	声明元素:
+		 <!ELEMENT ggg EMPTY>		//声明 ggg 是空元素,即不含子元素
+		 <!ELEMENT ggg (#PCDATA)> 	//声明 ggg 只有 PCDATA 的子元素
+		 <!ELEMENT ggg ANY> 		//声明 ggg 带有任何内容的元素
+		 <!ELEMENT ggg (to,from,heading,body)>  //声明 ggg 元素有四个元素："to、from、heading,、body"
+							//且每个元素必须且只在 ggg 元素里出现一次
+		 <!ELEMENT ggg (message)> 	//声明 message 必须且只在 ggg 里出现一次
+		 <!ELEMENT ggg (message+)> 	//声明 message 可在 ggg 元素内出现零次或多次。
+		 <!ELEMENT note (message?)> 	//声明 message 可在 "note" 元素内出现零次或一次。
+		 <!ELEMENT note (to,from,header,(message|body))> //声明了："note" 元素必须包含 "to" 元素、"from" 元素、
+								 //"header" 元素，以及非 "message" 元素既 "body" 元素。
+		 <!ELEMENT note (#PCDATA|to|from|header|message)*> //声明了："note" 元素可包含出现零次或多次的
+								   //PCDATA、"to"、"from"、"header" 或者 "message"
+	声明属性:
+		 DTD:
+		<!ELEMENT square EMPTY>
+		<!ATTLIST square width CDATA "0">	//声明了 square 元素内涵的 witth 属性,属性类型为字符数据 (CDATA),默认属性值为0,
+		合法的 XML:
+		<square width="100" />		//在上面的例子中，"square" 被定义为带有 CDATA 类型的 "width" 属性的空元素。
+						//如果宽度没有被设定，其默认值为0,但这里设了100
+		属性类型
+			CDATA 	值为字符数据 (character data)
+			(en1|en2|..) 	此值是枚举列表中的一个值
+			ID 	值为唯一的 id
+			IDREF 	值为另外一个元素的 id
+			IDREFS 	值为其他 id 的列表
+			NMTOKEN 	值为合法的 XML 名称
+			NMTOKENS 	值为合法的 XML 名称的列表
+			ENTITY 	值是一个实体
+			ENTITIES 	值是一个实体列表
+			NOTATION 	此值是符号的名称
+			xml: 	值是一个预定义的 XML 值
+		默认属性值 内容可为以下内容 :
+			值 		就是直接给一个属性值 作为默认值,
+				如上述的 <!ATTLIST square width CDATA "0"> 的"0"
+			#REQUIRED 	属性值是必需的,
+				如 <!ATTLIST person number CDATA #REQUIRED>声明后,
+				<person number ="12" />		//一定添加 number属性 要赋值,这里我们赋了个12的值
+			#IMPLIED 	属性不是必需的
+				如 <!ATTLIST contact fax CDATA #IMPLIED>声明后,
+				<contact />			//不一定要 fax 属性,这里就没有  
+			#FIXED value 	属性值是固定的	
+				如 <!ATTLIST sender company CDATA #FIXED "Microsoft">
+				 <sender company="Microsoft" />//一定添加 company属性且只能是 Microsoft 这个值
+			(xx1|xx2|xx3)	属性值只能在之间选
+				如 <!ATTLIST payment type (check|cash) "cash"> 声明后  //这里默认是cash
+				<payment type="check" /> 或 <payment type="cash" />   //只能是cash 和 check 选
+	声明实体:
+		DTD 实例:
+		<!ENTITY writer "Donald Duck.">
+		<!ENTITY copyright "Copyright W3CSchool.cc">
+		XML 实例：
+		<author>&writer;&copyright;</author> 
+	外部实体声明: 这个实体就是整个dtd文件
+		<!ENTITY writer SYSTEM "http://www.w3cschool.cc/entities.dtd">
+		<!ENTITY copyright SYSTEM "http://www.w3cschool.cc/entities.dtd">
+		XML 实例:
+		<author>&writer;&copyright;</author> 
+		然后,这俩个.dtd的内容会完全拷贝到 &writer 和 &copyright 的占位符位置上
+
+
+
+
+
+20171020
+xml 的 DOM
+	DOM 定义了所有文档元素的对象和属性，以及访问它们的方法（接口）。被分为 3 个不同的部分/级别：
+		核心 DOM - 用于任何结构化文档的标准模型
+		XML DOM - 用于 XML 文档的标准模型
+			XML DOM 定义了所有 XML 元素的对象和属性，以及访问它们的方法（接口）。
+			换句话说：XML DOM 是用于获取、更改、添加或删除 XML 元素的标准。
+		HTML DOM - 用于 HTML 文档的标准模型
+			HTML DOM 定义了所有 HTML 元素的对象和属性，以及访问它们的方法（接口）。
+	DTD 是定义了 一个xml 里应该 有什么节点 节点都是什么属性, 而 DOM 就是为操作这些节点 及节点内容的一套方法接口.
+		主要是通过节点解释器来 处理节点内容
+	DOM方式 加载 XML 例如:
+		loadxmldoc.js:
+			function loadXMLDoc(dname)
+			{
+			    if (window.XMLHttpRequest)
+			    {
+			        xhttp=new XMLHttpRequest();
+			    }
+			    else
+			    {
+			        xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+			    }
+			    xhttp.open("GET",dname,false);
+			    xhttp.send();
+			    return xhttp.responseXML;
+			}
+		test.html
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<script src="loadxmldoc.js"></script>
+			</head>
+			<body>
+			<script>
+			xmlDoc=loadXMLDoc("books.xml");		
+			document.write(xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue + "<br>");
+			document.write(xmlDoc.getElementsByTagName("author")[0].childNodes[0].nodeValue + "<br>");
+			document.write(xmlDoc.getElementsByTagName("year")[0].childNodes[0].nodeValue);
+			</script>
+			</body>
+			</html>
+			其中 XMLHttpRequest ActiveXObject 就是 xml 的获取,xhttp.send()远程获取xml文件,
+			并加载到 xhttp.responseXML 这个DOM对象里
+			诸如 xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue 就是典型的 DOM 方法 获取节点内容
+		再如:
+		oadxmlstring.js 文件代码：
+			function loadXMLString(txt) 
+			{
+			    if (window.DOMParser)
+			    {
+			        parser=new DOMParser();
+			        xmlDoc=parser.parseFromString(txt,"text/xml");
+			    }
+			    else 
+			    {
+			        // Internet Explorer
+			        xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+			        xmlDoc.async=false;
+			        xmlDoc.loadXML(txt); 
+			    }
+			    return xmlDoc;
+			}
+		test2.html
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<script src="loadxmlstring.js"></script>
+			</head>
+			<body>
+			<script>
+			text="<bookstore><book>";
+			text=text+"<title>Everyday Italian</title>";
+			text=text+"<author>Giada De Laurentiis</author>";
+			text=text+"<year>2005</year>";
+			text=text+"</book></bookstore>";	
+			xmlDoc=loadXMLString(text);
+			document.write(xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue);
+			document.write("<br>");
+			document.write(xmlDoc.getElementsByTagName("author")[0].childNodes[0].nodeValue);
+			document.write("<br>");
+			document.write(xmlDoc.getElementsByTagName("year")[0].childNodes[0].nodeValue);
+			</script>
+			</body>
+			</html>
+			其中 parser.parseFromString loadXML(txt) xmlDoc.loadXML(txt) 都是把一个xml样式的字符串像xml一样加载成 DOM 对象来使用
+			其中发现,这里的	return xmlDoc 而不是 return xmlDoc.responseXML; 这是因为,xml斌不是通过http获取的,
+			所以这里 xmlDoc 先当于之前的 xhttp.responseXML的内容,都是加载好xml文件的 DOM 对象 !!!
+	一些典型的 XML DOM 属性：
+		x.nodeName - x 的名称
+		x.nodeValue - x 的值
+		x.parentNode - x 的父节点
+		x.childNodes - x 的子节点
+		x.attributes - x 的属性节点
+	XML DOM 一般方法
+		x.getElementsByTagName(name) - 获取带有指定标签名称的所有元素
+		x.appendChild(node) - 向 x 插入子节点
+		x.removeChild(node) - 从 x 删除子节点
+		从上述例子分析:  xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue
+			xmlDoc - 由解析器创建的 XML DOM 对象
+			getElementsByTagName("title")[0] - 第一个 <title> 元素
+			childNodes[0] - <title> 元素的第一个子节点（文本节点）
+			nodeValue - 节点的值（文本本身）
+		再如:
+		xmlDoc=loadXMLDoc("books.xml");
+		x=xmlDoc.getElementsByTagName("title");		
+ 		for (i=0;i<x.length;i++)
+		{
+		  document.write(x[i].childNodes[0].nodeValue);
+		  document.write("");
+		}
+		x 是一个 所有 title 节点的数组
+		这里是获取每个 title 节点 的第0个字节点的节点值 (夹在头尾节点label 中间的文本内容)
+		再如:
+		xmlDoc=loadXMLDoc("books.xml");
+ 		x=xmlDoc.getElementsByTagName("book")[0].attributes; 
+		document.write(x.getNamedItem("category").nodeValue);
+		document.write("" + x.length);
+		x 是 book 节点里 的 多个属性数组
+		这里是 得到 book节点里category属性的属性值!!
+		再如:
+		xmlDoc=loadXMLDoc("books.xml");
+		txt=xmlDoc.getElementsByTagName("title")[0].getAttribute("lang"); 
+		结果：txt = "en"
+		这里是使用 getAttribute 获取属性的属性值
+		再如:
+		xmlDoc=loadXMLDoc("books.xml");
+		x=xmlDoc.getElementsByTagName("title")[0].getAttributeNode("lang");
+		txt=x.nodeValue; 
+		结果：txt = "en"
+		这里是使用 getAttributeNode 先获取属性节点
+	一个xml片段:以下讨论与这片段的格式有关:
+		book.xml:
+		<bookstore>
+		    <book category="cooking">
+		        <title lang="en">Everyday Italian</title>
+		        <author>Giada De Laurentiis</author>
+		        <year>2005</year>
+		        <price>30.00</price>
+		    </book>
+		</bookstore>
+
+	XML DOM 补充方法:
+		获得属性的属性值:
+			xmlDoc=loadXMLDoc("books.xml");
+	 		x=xmlDoc.getElementsByTagName("book")[0].attributes; 
+			document.write(x.getNamedItem("category").nodeValue);
+			document.write("" + x.length);
+			x 是 book 节点里 的 多个属性数组
+			这里是 得到 book节点里category属性的属性值!!
+			再如:
+			xmlDoc=loadXMLDoc("books.xml");
+			txt=xmlDoc.getElementsByTagName("title")[0].getAttribute("lang"); 
+			结果：txt = "en"
+			这里是使用 getAttribute 获取属性的属性值
+			再如:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].getAttributeNode("lang");
+			txt=x.nodeValue; 
+			结果：txt = "en"
+			这里是使用 getAttributeNode 先获取属性节点
+		改变文本节点的值,如
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.nodeValue="Easy Cooking"; 
+		改变属性的值,如
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName('book');
+			x[0].setAttribute("category","food");
+			吧 category 属性的属性值改为 food
+			也可以:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("book")[0]
+			y=x.getAttributeNode("category");
+			y.nodeValue="food"; 
+		删除元素节点
+			xmlDoc=loadXMLDoc("books.xml");
+			y=xmlDoc.getElementsByTagName("book")[0];
+			xmlDoc.documentElement.removeChild(y); 
+		删除自身 - 删除当前的节点
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.parentNode.removeChild(x); 
+		删除文本节点:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0];
+			y=x.childNodes[0];
+			x.removeChild(y); 
+		清空文本节点:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.nodeValue=""; 
+		根据名称删除属性节点:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("book");
+			x[0].removeAttribute("category"); 
+			其中 removeAttribute(name) 方法用于根据名称删除属性节点。
+		根据对象删除属性节点
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("book");
+			for (i=0;i<x.length;i++)
+			{
+			  while (x[i].attributes.length>0)
+			  {
+			    attnode=x[i].attributes[0];
+			    old_att=x[i].removeAttributeNode(attnode);
+			  }
+			}
+			例子是删除所有 <book> 元素的所有属性：
+			其中 removeAttributeNode(node) 方法通过使用 node 对象作为参数，来删除属性节点。
+		替换元素节点
+			replaceChild() 方法用于替换节点。
+			下面的代码片段替换第一个 <book> 元素：
+			xmlDoc=loadXMLDoc("books.xml");		 
+			x=xmlDoc.documentElement;			 
+			// 创建新的 book 元素, title 元素及 node 节点
+			newNode=xmlDoc.createElement("book");
+			newTitle=xmlDoc.createElement("title");
+			newText=xmlDoc.createTextNode("A Notebook"); 
+			// 将 text 节点添加到 title 节点中
+			newTitle.appendChild(newText);
+			// 将 title 节点添加到  book 节点中
+			newNode.appendChild(newTitle);
+			y=xmlDoc.getElementsByTagName("book")[0]
+			// 使用新节点替换第一个 book 节点
+			x.replaceChild(newNode,y);
+		替换文本节点中的数据
+			replaceData() 方法用于替换文本节点中的数据。
+			replaceData() 方法有三个参数：
+			    offset - 在何处开始替换字符。offset 值以 0 开始。
+			    length - 要替换多少字符
+			    string - 要插入的字符串
+			实例
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.replaceData(0,8,"Easy"); 
+		使用 nodeValue 替换文本节点中的数据
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.nodeValue="Easy Italian"; 
+		创建新的元素节点
+			xmlDoc=loadXMLDoc("books.xml");
+			newel=xmlDoc.createElement("edition");
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.appendChild(newel); 
+		创建新的属性节点
+			xmlDoc=loadXMLDoc("books.xml");
+			newatt=xmlDoc.createAttribute("edition");
+			newatt.nodeValue="first";
+			x=xmlDoc.getElementsByTagName("title");
+			x[0].setAttributeNode(newatt); 
+		使用 setAttribute() 创建属性
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName('book');
+			x[0].setAttribute("edition","first"); 
+		创建文本节点
+			xmlDoc=loadXMLDoc("books.xml");
+			newel=xmlDoc.createElement("edition");
+			newtext=xmlDoc.createTextNode("first");
+			newel.appendChild(newtext);
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.appendChild(newel); 
+			使用 loadXMLDoc() 把 "books.xml" 载入 xmlDoc 中
+			创建一个新元素节点 <edition>
+			创建一个新的文本节点，其文本是 "first"
+			向这个元素节点追加新的文本节点
+			向第一个 <book> 元素追加新的元素节点
+		创建 CDATA Section 节点
+			xmlDoc=loadXMLDoc("books.xml");
+			newCDATA=xmlDoc.createCDATASection("Special Offer & Book Sale");
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.appendChild(newCDATA); 
+			使用 loadXMLDoc() 把 "books.xml" 载入 xmlDoc 中
+			创建一个新的 CDATA section 节点
+			向第一个 <book> 元素追加这个新的 CDATA section 节点
+		创建注释节点
+			xmlDoc=loadXMLDoc("books.xml");
+			newComment=xmlDoc.createComment("Revised March 2008");
+			x=xmlDoc.getElementsByTagName("book")[0];
+			x.appendChild(newComment); 
+			使用 loadXMLDoc() 把 "books.xml" 载入 xmlDoc 中
+			创建一个新的注释节点
+			把这个新的注释节点追加到第一个 <book> 元素
+		添加节点 - appendChild() 例子见上述
+		插入节点 - insertBefore()
+			insertBefore()方法用于在指定的子节点之前插入节点。
+			实例:
+			xmlDoc=loadXMLDoc("books.xml");
+			newNode=xmlDoc.createElement("book");
+			x=xmlDoc.documentElement;
+			y=xmlDoc.getElementsByTagName("book")[3];
+			x.insertBefore(newNode,y); 
+		向文本节点添加文本 - insertData()
+			insertData() 方法将数据插入已有的文本节点中。
+			insertData() 方法有两个参数：
+			    offset - 在何处开始插入字符（以 0 开始）
+			    string - 要插入的字符串
+			下面的代码片段将把 "Easy" 添加到已加载的 XML 的第一个 <title> 元素的文本节点：
+			实例
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("title")[0].childNodes[0];
+			x.insertData(0,"Easy "); 
+		克隆节点:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName('book')[0];
+			cloneNode=x.cloneNode(true);
+			xmlDoc.documentElement.appendChild(cloneNode);
+			把克隆了的节点又加到里面!!
+	实际使用过程中,比较实用的节点关系!!!!
+		父节点 parentNode 例如:
+			xmlDoc=loadXMLDoc("books.xml");
+			x=xmlDoc.getElementsByTagName("book")[0];
+			document.write(x.parentNode.nodeName);
+		子节点数组 childNodes 例如:
+			x=xmlDoc.getElementsByTagName("title")[0];
+			y=x.childNodes[0];
+			txt=y.nodeValue; 
+		第一个子节点 firstChild
+		最后一个子节点 lastChild
+		下一个节点 nextSibling 例如:
+			避免空节点:
+			function get_nextSibling(n)
+			{
+			  y=n.nextSibling;
+			  while (y.nodeType!=1)
+			  {
+			    y=y.nextSibling;
+			  }
+			  return y;
+			}
+			元素节点的类型是 1。如果同级节点不是元素节点，就移动到下一个节点，直到找到元素节点为止。
+			通过这个办法，在 Internet Explorer 和 Firefox 中，都可以得到相同的结果。
+		上一个子节点 previousSibling
+	补充, 
+		微软浏览器不会把节点里的文本中出现的空格和换行当成一个节点, 但是其他浏览器会
+		
+
+
+
+
+????????????????????
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
