@@ -977,7 +977,7 @@ djanggo:相关内容
 			//重要的功能是 把 新的model 转化成 表单, 
 			//但是,更新原来的model 或者会不会破坏已存在的数据条内容,还没实践过!!
 
-javascript学习:	
+javascript 简介:	
 	javascript可写在 <head>段,或者<body>段
 	注意javascript 自带一个基础框架库,可直接使用依稀基础函数,如果要使用其他框架库,例如jquery,就要加载框架
 	javascript与 html 的接口 一般是指 onclick,onmouseover,onload,onchange,onmousout,onmousedown、onmouseup
@@ -3797,6 +3797,7 @@ css3新添:
 20170920
 研究建立一个用户系统!!!
 win7安装了 wamp !!(win+apache+mysql+php)
+	直接是打包的 wampserver64 版本
 	然而并没有成功转换 网站根目录,暂时不管
 网上下了一个电商网站 (汉潮b2b2c)
 	使用 Thinkphp框架,需要ioncube的php插件
@@ -3853,7 +3854,7 @@ php + html5 websocket 聊天室:(php_learn/websoket-php-chat):https://my.oschina
 		外网用户也可以通过http://410833c8.nat123.net:18099/html/html5_learn/php_learn/websoket-php-chat/clint.html
 		但是nat123并没有吧 8000 口映射出来,所以不知道为什么外网可以访问没有被映射的端口
 		最后发现,websocket并没有通过nat123映射到外网,因为client.html url还是 127.0.0.1:8000!!!!!
-	websocket需要另外映射到外网
+	websocket需要另外映射到外网  (机子不要挂公司的 http 代理)
 		现在设置websocket 的端口为40000,即改服务端 websocket.php
 			$sk=new Sock('127.0.0.1',40000);
 		nat123 官网上建立映射端口:
@@ -4431,7 +4432,7 @@ Audio属于dom元素，带有ui界面，在移动端Audio属于边下载边播�
 			class() 把 opqUI这个ui启动函数 集成到 TestUI函数上,即生成一个新的TestUI函数代替旧的TestUI
 			然后就可以通过 Laya.stage.addChild(new TestUI()); 而不是 Laya.stage.addChild(new opqUI());
 			的方式,启动页面并加载到舞台!!
-以下是加载ui编辑器编出来的ui,并使用的代码的一个例子:
+以下是 加载ui编辑器编出来 的ui,并使用的代码的一个例子:
 (function()
 {
     var Stage= Laya.Stage;
@@ -4540,15 +4541,78 @@ Audio属于dom元素，带有ui界面，在移动端Audio属于边下载边播�
       }
 })();
 
-
-
-
-
-
-
-
-
-
+下一步,JS的跨文档调用学习, JS没有 class import private 概念, typescript 才有
+	把js代码单独写个js文件，然后通过<script src="js文件路径"></script>这种方式调用就可以了 
+研究了大打地鼠demo,发现
+	首先,出现
+		var GameStart = (function(_super){
+		    function GameStart(a,b,c){
+		        GameStart.super(this);
+		        this.startBtn.on(Laya.Event.CLICK,this,this.onStartGame)
+		    }
+		    Laya.class(GameStart,"GameStart",_super);
+		    var _proto = GameStart.prototype;
+		    _proto.onStartGame = function(){
+		        this.removeSelf();     
+		        if(!LayaSample.game){
+		            LayaSample.game = new Game();
+		        }
+		        LayaSample.game.gameStart();
+		        Laya.stage.addChild(LayaSample.game);
+		    }
+		    return GameStart;
+		})(ui.GameStartUI);
+		这里注意 这个 var GameStart 由后面的 function(_super) 执行后得到的信息
+		而这个 fuction 
+			执行 Laya.class(GameStart,"GameStart",_super)后 function GameStart(a,b,c) 继承了ui.GameStartUI
+			执行 var _proto = GameStart.prototype; 是 function GameStart(a,b,c) 添加了内嵌函数入口!!
+			_proto.onStartGame = function(),,, 就是 function GameStart(a,b,c) 的 一个内嵌函数
+			最后 return 的内容是 function GameStart(a,b,c) 继承各种内容后的同名新版本函数function GameStart(a,b,c)
+			为了区别我暂取名新版本函数function GameStart(a,b,c) 为 function GameStartxxx(a,b,c)"
+			相当于 var GameStart 定义了一个函数 
+			var GameStart = functon GameStartxxx(a,b,c){...};
+	之后出现
+		LayaSample.gameStart = new GameStart(s,g,h); 中的 new GameStart(s,g,h); 指的是 var GameStart
+		由于 var GameStart 就是保存了函数的变量 functon GameStartxxx(a,b,c){...};
+		所以相当于 LayaSample.gameStart = new (functon GameStartxxx(s,g,h){...})(); 而s,g,h 是代替a,b,c的参数
+		functon GameStartxxx(a,b,c){...} 继承集成好多东西, 但这些东西都不是执行functon GameStartxxx(){...}时直接执行的,
+		这些继承集成的内容是由其他地方触发执行,所以执行functon GameStartxxx(s,g,h){...}时,
+		实际就是执行旧版的 function GameStart(s,g,h) 里的内容,即只有
+			GameStart.super(this); 
+				//这里相当于连接继承ui.GameStartUI, 
+				//这样Laya.stage.addChild(LayaSample.gameStart); 可以把ui.GameStartUI加载到 舞台上!
+		        this.startBtn.on(Laya.Event.CLICK,this,this.onStartGame) 
+				//这里就是给functon GameStartxxx(){...}的那些集成的内嵌函数onStartGame 配置触发接口
+		由于onStartGame 是 functon GameStartxxx(a,b,c){...} 的内嵌函数,
+		我们还可以 这样调用  LayaSample.gameStart.onStartGame()
+这里涉及到 js 的 类构造设计,先了解 js 的类是什么鬼,详见 javascript学习
+通过上述理解 函数 和 对象!!!
+	首先 所有函数 都是 对象, 所以函数都有构造函数的意义
+	function a() {};	//一个空函数
+	var b = new a() ;	//执行a()函数,也可以称为实例化a(),这个 实例化a() 的行为 便构造了一个新的对象,一个实例a()
+				//一个实例a(),即一个初始化的空间存储这个实例a(),而提供了一个指针指向了这个实例a()!!
+				//但由于a()是一个空函数,所以,这个初始化空间里除了一个prototype属性指针,什么都没有
+				//最后 b 得到这个实例a()对象,即 b 指向了这个初始空间
+	function aa(x) {this.nb = x};	//一个含参数,有内容的函数
+	var bb = new aa(1998);		//执行aa()函数,也可以称为实例化a(),这个 实例化aa() 的行为 便构造了一个新的对象,一个实例aa()
+					//一个实例a(),即一个初始化的空间存储这个实例a(),而提供了一个指针指向了这个实例a()!!
+					//而this 就是这空间的指针,表示aa(x)函数可以通过这个指针访问自己这个实例化空间里的内容
+					//这个空间除了一个prototype属性指针外,也有一个 nb 的内容
+					//函数把参数x内容给了nb 所以nb的内容是 1998
+					//最后 bb 得到这个实例aa()对象,即 bb 指向了这个初始空间
+	function A(){ 
+		function kk(o,p) {this.pp = p+o;}
+		return	kk;	
+	}			//这是一个内嵌了一个函数的函数
+	var c = new A() ;	//执行A()函数,也可以称为实例化A(),这个 实例化A() 的行为 便构造了一个新的对象,一个实例A()
+				//一个实例A(),即一个初始化的空间存储这个实例A(),而提供了一个指针指向了这个实例a()!!
+				//这个实例A()空间除了一个prototype属性指针外,存放了一个 函数 kk(o,p),
+				//至于是什么存放方式未探究(存放整个函数,还是一个指向这个函数的指针)
+				//函数最后是return kk ,表示最后 c得到的不是实例A(),而是函数kk(o,p)
+				//注意,是函数kk(o,p)本身(应该是函数位置的指针),而不是继续让kk(o,p)执行而得到的一个实例kk(o,p)
+	var d = new c (78,90);	//这时的 var c 指向 kk(o,p) 函数本身, 表示 c 就相当于 kk(o,p) 函数了
+				//new c (78,90); 相当于new kk(78,90); 了
+javascript类中最重要的就是prototype概念了, 详见 javascript类深入学习
 
 
 
@@ -4996,8 +5060,1483 @@ xml 的 DOM
 
 
 
-????????????????????
 
+20171024
+javascript学习  
+JavaScript 数据类型   
+	字符串（String）、数字(Number)、布尔(Boolean)、数组(Array)、对象(Object)、空（Null）、未定义（Undefined）。
+JavaScript 拥有动态类型,这意味着相同的变量可用作不同的类型：
+	实例
+	var x;               // x 为 undefined
+	var x = 5;           // 现在 x 为数字
+	var x = "John";      // 现在 x 为字符串
+JavaScript 字符串
+	字符串可以是引号中的任意文本。您可以使用单引号或双引号：
+	实例
+	var carname="Volvo XC60";
+	var carname='Volvo XC60';
+	您可以在字符串中使用引号，只要不匹配包围字符串的引号即可：
+	实例
+	var answer="It's alright";
+	var answer="He is called 'Johnny'";
+	var answer='He is called "Johnny"';
+JavaScript 只有一种数字类型。数字可以带小数点，也可以不带：
+	实例
+	var x1=34.00;      //使用小数点来写
+	var x2=34;         //不使用小数点来写
+	极大或极小的数字可以通过科学（指数）计数法来书写：
+	实例
+	var y=123e5;      // 12300000
+	var z=123e-5;     // 0.00123
+JavaScript 布尔（逻辑）只能有两个值：true 或 false。
+	var x=true;
+	var y=false;
+JavaScript 数组 
+	实例
+	var cars=new Array();
+	cars[0]="Saab";
+	cars[1]="Volvo";
+	cars[2]="BMW";
+	或者 (condensed array):
+	var cars=new Array("Saab","Volvo","BMW");
+	或者 (literal array):
+	实例
+	var cars=["Saab","Volvo","BMW"];
+
+	定义数组元素，最后不能添加逗号,错误的定义方式：
+	points = [40, 100, 1, 5, 25, 10,];
+JavaScript 对象由花括号分隔。在括号内部，对象的属性以名称和值对的形式 (name : value) 来定义。属性由逗号分隔：
+	var person={firstname:"John", lastname:"Doe", id:5566};
+	上面例子中的对象 (person) 有三个属性：firstname、lastname 以及 id。
+	空格和折行无关紧要。声明可横跨多行：
+	var person={
+	firstname : "John",
+	lastname  : "Doe",
+	id        :  5566
+	};
+	对象属性有两种寻址方式：
+	实例
+	name=person.lastname;
+	name=person["lastname"];
+Undefined 和 Null
+	Undefined 这个值表示变量不含有值。undefined 是指变量为未知类型,不是变量的值
+	可以通过将变量的值设置为 null 来清空变量。
+	实例
+	cars=null;
+	person=null;
+声明变量类型
+	当您声明新变量时，可以使用关键词 "new" 来声明其类型：
+	var carname=new String;
+	var x=      new Number;
+	var y=      new Boolean;
+	var cars=   new Array;
+	var person= new Object;
+还有一种是变量类型是 函数 ??? 在laya项目中发现的
+	实例
+	var ham = (fuction(_super){.. return bb;})(kk) ; //实际上是执行了 执行后面的函数, 得到的 bb 赋值给 ham 变量
+							 //kk 是 函数的变量,即赋给 _super的 
+	var cc = new ham ();	//new ham () 中 ham () 是一个函数!!, 但是ham是一个变量,所以是什么回事??
+				//原来 (fuction(_super){.. return bb;})(kk) 构造了一个函数,
+				//及最后的 bb的内容是 bb = function xxx(){}, 而 var ham = bb
+				//所以var cc = new ham (); 就相当于 var cc = new (function xxx(){}) ();
+				//如果 (fuction(_super){.. return bb;})(kk) 构造了的函数需要带参数,
+				//即 bb = function xxx(a,b,c){}	比如带三个参数位
+				//那么 var cc = new ham (o,pp,q); 也要填进去三个参数!!
+	注意与以下对比
+	function ham(){... return bb;};
+	var cc = new ham ();	//这里的的()就是说要传递参数的意思, 因为 ham () 是一个函数	
+javascript类学习
+Javascript 面向对象编程（一）：封装  http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_inheritance_continued.html
+	Javascript是一种基于对象（object-based）的语言，你遇到的所有东西几乎都是对象。
+	但是，它又不是一种真正的面向对象编程（OOP）语言，因为它的语法中没有class（类）。
+	那么，如果我们要把"属性"（property）和"方法"（method），封装成一个对象，甚至要从原型对象生成一个实例对象，我们应该怎么做呢？
+
+一、 生成实例对象的原始模式
+	假定我们把猫看成一个对象，它有"名字"和"颜色"两个属性。
+	    　　var Cat = {
+	    　　　　name : '',
+	    　　　　color : ''
+	    　　}
+	现在，我们需要根据这个原型对象的规格（schema），生成两个实例对象
+	    　　var cat1 = {}; // 创建一个空对象
+	    　　　　cat1.name = "大毛"; // 按照原型对象的属性赋值
+	    　　　　cat1.color = "黄色";
+	    　　var cat2 = {};
+	    　　　　cat2.name = "二毛";
+	    　　　　cat2.color = "黑色";
+	好了，这就是最简单的封装了，把两个属性封装在一个对象里面。但是，这样的写法有两个缺点，
+		一是如果多生成几个实例，写起来就非常麻烦；
+		二是实例与原型之间，没有任何办法，可以看出有什么联系。
+二、 原始模式的改进
+	我们可以写一个函数，解决代码重复的问题。
+	    　　function Cat(name,color) {	
+	    　　　　return {
+	    　　　　　　name:name,
+	    　　　　　　color:color
+	    　　　　}
+	    　　}
+	然后生成实例对象，就等于是在调用函数：
+	    　　var cat1 = Cat("大毛","黄色");
+	    　　var cat2 = Cat("二毛","黑色");
+	这种方法的问题依然是，cat1和cat2之间没有内在的联系，不能反映出它们是同一个原型对象的实例。
+三、 构造函数模式
+	为了解决从原型对象生成实例的问题，Javascript提供了一个构造函数（Constructor）模式。
+	所谓"构造函数"，其实就是一个普通函数，但是内部使用了this变量。
+	对构造函数使用new运算符，就能生成实例，并且this变量会绑定在实例对象上。
+	比如，猫的原型对象现在可以这样写，
+	    　　function Cat(name,color){
+	    　　　　this.name=name;
+	    　　　　this.color=color;
+	    　　}
+	我们现在就可以生成实例对象了。
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　var cat2 = new Cat("二毛","黑色");
+	    　　alert(cat1.name); // 大毛
+	    　　alert(cat1.color); // 黄色
+	这时cat1和cat2会自动含有一个constructor属性，指向它们的构造函数。
+	    　　alert(cat1.constructor == Cat); //true
+	    　　alert(cat2.constructor == Cat); //true
+	Javascript还提供了一个instanceof运算符，验证原型对象与实例对象之间的关系。
+	    　　alert(cat1 instanceof Cat); //true
+	    　　alert(cat2 instanceof Cat); //true
+四、构造函数模式的问题
+	构造函数方法很好用，但是存在一个浪费内存的问题。
+	请看，我们现在为Cat对象添加一个不变的属性type（种类），再添加一个方法eat（吃）。那么，原型对象Cat就变成了下面这样：
+	    　　function Cat(name,color){
+	    　　　　this.name = name;
+	    　　　　this.color = color;
+	    　　　　this.type = "猫科动物";
+	    　　　　this.eat = function(){alert("吃老鼠");};
+	    　　}
+	还是采用同样的方法，生成实例：
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　var cat2 = new Cat ("二毛","黑色");
+	    　　alert(cat1.type); // 猫科动物
+	    　　cat1.eat(); // 吃老鼠
+	表面上好像没什么问题，但是实际上这样做，有一个很大的弊端。那就是对于每一个实例对象，type属性和eat()方法都是一模一样的内容，
+	每一次生成一个实例，都必须为重复的内容，多占用一些内存。这样既不环保，也缺乏效率。	
+	    　　alert(cat1.eat == cat2.eat); //false	
+	能不能让type属性和eat()方法在内存中只生成一次，然后所有实例都指向那个内存地址呢？回答是可以的。
+五、 Prototype模式
+	Javascript规定，每一个构造函数都有一个prototype属性，指向另一个对象。这个对象的所有属性和方法，都会被构造函数的实例继承。
+	这意味着，我们可以把那些不变的属性和方法，直接定义在prototype对象上。
+	    　　function Cat(name,color){
+	    　　　　this.name = name;
+	    　　　　this.color = color;
+	    　　}
+	    　　Cat.prototype.type = "猫科动物";
+	    　　Cat.prototype.eat = function(){alert("吃老鼠")};
+	然后，生成实例。
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　var cat2 = new Cat("二毛","黑色");
+	    　　alert(cat1.type); // 猫科动物
+	    　　cat1.eat(); // 吃老鼠
+	这时所有实例的type属性和eat()方法，其实都是同一个内存地址，指向prototype对象，因此就提高了运行效率。
+	    　　alert(cat1.eat == cat2.eat); //true
+六、 Prototype模式的验证方法
+	为了配合prototype属性，Javascript定义了一些辅助方法，帮助我们使用它。，
+	6.1 isPrototypeOf()
+	这个方法用来判断，某个proptotype对象和某个实例之间的关系。
+	    　　alert(Cat.prototype.isPrototypeOf(cat1)); //true
+	    　　alert(Cat.prototype.isPrototypeOf(cat2)); //true
+	6.2 hasOwnProperty()
+	每个实例对象都有一个hasOwnProperty()方法，用来判断某一个属性到底是本地属性，还是继承自prototype对象的属性。
+	    　　alert(cat1.hasOwnProperty("name")); // true
+	    　　alert(cat1.hasOwnProperty("type")); // false
+	6.3 in运算符
+	in运算符可以用来判断，某个实例是否含有某个属性，不管是不是本地属性。
+	    　　alert("name" in cat1); // true
+	    　　alert("type" in cat1); // true
+	in运算符还可以用来遍历某个对象的所有属性。
+	    　　for(var prop in cat1) { alert("cat1["+prop+"]="+cat1[prop]); }
+
+Javascript面向对象编程（二）：构造函数的继承
+今天要介绍的是，对象之间的"继承"的五种方法。
+	比如，现在有一个"动物"对象的构造函数。
+	    　　function Animal(){
+	    　　　　this.species = "动物";
+	    　　}
+	还有一个"猫"对象的构造函数。
+	    　　function Cat(name,color){
+	    　　　　this.name = name;
+	    　　　　this.color = color;
+	    　　}	
+	怎样才能使"猫"继承"动物"呢？
+一、 构造函数绑定
+	第一种方法也是最简单的方法，使用call或apply方法，将父对象的构造函数绑定在子对象上，即在子对象构造函数中加一行：
+	    　　function Cat(name,color){
+	    　　　　Animal.apply(this, arguments);
+	    　　　　this.name = name;
+	    　　　　this.color = color;
+	    　　}
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　alert(cat1.species); // 动物	
+二、 prototype模式
+	第二种方法更常见，使用prototype属性。
+	如果"猫"的prototype对象，指向一个Animal的实例，那么所有"猫"的实例，就能继承Animal了。
+	    　　Cat.prototype = new Animal();
+	    　　Cat.prototype.constructor = Cat;
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　alert(cat1.species); // 动物
+		代码的第一行，我们将Cat的prototype对象指向一个Animal的实例。
+		    　　Cat.prototype = new Animal();
+		它相当于完全删除了prototype 对象原先的值，然后赋予一个新值。但是，第二行又是什么意思呢？
+		    　　Cat.prototype.constructor = Cat;
+		原来，任何一个prototype对象都有一个constructor属性，指向它的构造函数。
+		如果没有"Cat.prototype = new Animal();"这一行，Cat.prototype.constructor是指向Cat的；
+		加了"Cat.prototype = new Animal();"这一行以后，Cat.prototype.constructor指向Animal。
+		    　　alert(Cat.prototype.constructor == Animal); //true
+		更重要的是，每一个实例也有一个constructor属性，默认调用prototype对象的constructor属性。
+		    　　alert(cat1.constructor == Cat.prototype.constructor); // true
+		因此，在运行"Cat.prototype = new Animal();"这一行之后，cat1.constructor也指向Animal！
+		    　　alert(cat1.constructor == Animal); // true
+	这显然会导致继承链的紊乱（cat1明明是用构造函数Cat生成的），
+	因此我们必须手动纠正，将Cat.prototype对象的constructor值改为Cat。这就是第二行的意思。
+	这是很重要的一点，编程时务必要遵守。下文都遵循这一点，即如果替换了prototype对象，
+	    　　o.prototype = {};
+	那么，下一步必然是为新的prototype对象加上constructor属性，并将这个属性指回原来的构造函数。
+	    　　o.prototype.constructor = o;
+三、 直接继承prototype
+	第三种方法是对第二种方法的改进。由于Animal对象中，不变的属性都可以直接写入Animal.prototype。
+	所以，我们也可以让Cat()跳过 Animal()，直接继承Animal.prototype。
+	现在，我们先将Animal对象改写：
+	    　　function Animal(){ }	
+	    　　Animal.prototype.species = "动物";
+	然后，将Cat的prototype对象，然后指向Animal的prototype对象，这样就完成了继承。
+	    　　Cat.prototype = Animal.prototype;
+	    　　Cat.prototype.constructor = Cat;
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　alert(cat1.species); // 动物
+	与前一种方法相比，这样做的优点是效率比较高（不用执行和建立Animal的实例了），比较省内存。
+	缺点是 Cat.prototype和Animal.prototype现在指向了同一个对象，那么任何对Cat.prototype的修改，都会反映到Animal.prototype。
+	所以，上面这一段代码其实是有问题的。请看第二行
+	    　Cat.prototype.constructor = Cat;
+	这一句实际上把Animal.prototype对象的constructor属性也改掉了！
+	    　　alert(Animal.prototype.constructor); // Cat
+四、 利用空对象作为中介 //关于这个中介的解释还是很鸡肋,建议不要被误导
+	由于"直接继承prototype"存在上述的缺点，所以就有第四种方法，利用一个空对象作为中介。
+	    　　var F = function(){};
+	    　　F.prototype = Animal.prototype;
+	    　　Cat.prototype = new F();   //这步关键,
+	    　　Cat.prototype.constructor = Cat;
+	F是空对象，所以几乎不占内存。因为是F.prototype = Animal.prototype; 而不是F = Animal.prototype;
+	又 Cat.prototype = new F();
+	所以 Cat.prototype.constructor == F.constructor , 因为 F.constructor 又没东西,只是 F.prototype 有东西
+	这时，修改Cat.prototype.constructor，修改了F.constructor,
+	没有修改F.prototype.constructor,所以不会影响到Animal的prototype对象。
+	    　　alert(Animal.prototype.constructor); // Animal
+	我们将上面的方法，封装成一个函数，便于使用。
+	    　　function extend(Child, Parent) {
+	    　　　　var F = function(){};
+	    　　　　F.prototype = Parent.prototype;
+	    　　　　Child.prototype = new F();
+	    　　　　Child.prototype.constructor = Child;
+	    　　　　Child.uber = Parent.prototype;
+	    　　}
+	使用的时候，方法如下
+	    　　extend(Cat,Animal);
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　alert(cat1.species); // 动物
+		但是读取cat1.species时, 等于的读取 Cat.prototype.spepices 等于读取 F.spepices
+		由于 F.spepices 没有东西,
+		所以,等于读取 F.prototype.spepices 等于读取 Animal.prototype.spepices
+	这个extend函数，就是YUI库如何实现继承的方法。
+	另外，说明一点，函数体最后一行
+	    　　Child.uber = Parent.prototype;
+		意思是为子对象设一个uber属性，这个属性直接指向父对象的prototype属性。
+		（uber是一个德语词，意思是"向上"、"上一层"。）这等于在子对象上打开一条通道，
+		可以直接调用父对象的方法。这一行放在这里，只是为了实现继承的完备性，纯属备用性质。
+五、 拷贝继承
+	上面是采用prototype对象，实现继承。我们也可以换一种思路，纯粹采用"拷贝"方法实现继承。
+	简单说，如果把父对象的所有属性和方法，拷贝进子对象，不也能够实现继承吗？这样我们就有了第五种方法。
+	首先，还是把Animal的所有不变属性，都放到它的prototype对象上。
+	    　　function Animal(){}
+	    　　Animal.prototype.species = "动物";
+	然后，再写一个函数，实现属性拷贝的目的。
+	    　　function extend2(Child, Parent) {
+	    　　　　var p = Parent.prototype;
+	    　　　　var c = Child.prototype;
+	    　　　　for (var i in p) {
+	    　　　　　　c[i] = p[i];
+	    　　　　　　}
+	    　　　　c.uber = p;
+	    　　}
+	这个函数的作用，就是将父对象的prototype对象中的属性，一一拷贝给Child对象的prototype对象。
+	使用的时候，这样写：
+	    　　extend2(Cat, Animal);
+	    　　var cat1 = new Cat("大毛","黄色");
+	    　　alert(cat1.species); // 动物
+Javascript面向对象编程（三）：非构造函数的继承
+一、什么是"非构造函数"的继承？
+	比如，现在有一个对象，叫做"中国人"。
+	    　　var Chinese = {
+	    　　　　nation:'中国'
+	    　　};
+	还有一个对象，叫做"医生"。
+	    　　var Doctor ={
+	    　　　　career:'医生'
+	    　　}
+	请问怎样才能让"医生"去继承"中国人"，也就是说，我怎样才能生成一个"中国医生"的对象？	
+	这里要注意，这两个对象都是普通对象，不是构造函数，无法使用构造函数方法实现"继承"。
+二、object()方法
+	json格式的发明人Douglas Crockford，提出了一个object()函数，可以做到这一点。
+	    　　function object(o) {
+	    　　　　function F() {}
+	    　　　　F.prototype = o;
+	    　　　　return new F();
+	    　　}
+	这个object()函数，其实只做一件事，就是把子对象的prototype属性，指向父对象，从而使得子对象与父对象连在一起。
+	使用的时候，第一步先在父对象的基础上，生成子对象：
+	var Doctor = object(Chinese);
+	然后，再加上子对象本身的属性：
+	    　　Doctor.career = '医生';
+	这时，子对象已经继承了父对象的属性了。
+	    　　alert(Doctor.nation); //中国
+三、浅拷贝
+	除了使用"prototype链"以外，还有另一种思路：把父对象的属性，全部拷贝给子对象，也能实现继承。
+	下面这个函数，就是在做拷贝：
+	    　　function extendCopy(p) {
+	    　　　　var c = {};
+	    　　　　for (var i in p) {
+	    　　　　　　c[i] = p[i];
+	    　　　　}
+	    　　　　c.uber = p;
+	    　　　　return c;
+	    　　}
+	使用的时候，这样写：
+	    　　var Doctor = extendCopy(Chinese);
+	    　　Doctor.career = '医生';
+	    　　alert(Doctor.nation); // 中国
+	但是，这样的拷贝有一个问题。那就是，如果父对象的属性等于数组或另一个对象，
+	那么实际上，子对象获得的只是一个内存地址，而不是真正拷贝，因此存在父对象被篡改的可能。
+	请看，现在给Chinese添加一个"出生地"属性，它的值是一个数组。
+	    　　Chinese.birthPlaces = ['北京','上海','香港'];
+	通过extendCopy()函数，Doctor继承了Chinese。
+	    　　var Doctor = extendCopy(Chinese);
+	然后，我们为Doctor的"出生地"添加一个城市：
+	    　　Doctor.birthPlaces.push('厦门');
+	发生了什么事？Chinese的"出生地"也被改掉了！
+	    　　alert(Doctor.birthPlaces); //北京, 上海, 香港, 厦门
+	    　　alert(Chinese.birthPlaces); //北京, 上海, 香港, 厦门
+	所以，extendCopy()只是拷贝基本类型的数据，我们把这种拷贝叫做"浅拷贝"。这是早期jQuery实现继承的方式。
+	也就说 父对象的某个属性 是数组 或者 是一个对象(有多个数据)，浅拷贝只是拷贝了 指向地址
+四、深拷贝
+	所谓"深拷贝"，就是能够实现真正意义上的数组和对象的拷贝。
+	由于只是当属性 是数组 或者 是一个对象,拷贝过去的才是一个指针地址,所以
+	当遇到的父对象的某个属性 是数组 或者 是一个对象(有多个数据)时,进入这个数组 或者对象 然后在再执行一次浅拷贝
+	若又遇到了数组或者对象,则有依次方法递归调用
+	最终实现深拷贝
+	    　　function deepCopy(p, c) {
+	    　　　　var c = c || {};
+	    　　　　for (var i in p) {
+	    　　　　　　if (typeof p[i] === 'object') {
+	    　　　　　　　　c[i] = (p[i].constructor === Array) ? [] : {};
+	    　　　　　　　　deepCopy(p[i], c[i]);	
+	    　　　　　　} else {
+	    　　　　　　　　　c[i] = p[i];
+	    　　　　　　}
+	    　　　　}
+	    　　　　return c;
+	    　　}
+	使用的时候这样写：
+	    　　var Doctor = deepCopy(Chinese);
+	现在，给父对象加一个属性，值为数组。然后，在子对象上修改这个属性：
+	    　　Chinese.birthPlaces = ['北京','上海','香港'];
+	    　　Doctor.birthPlaces.push('厦门');
+	这时，父对象就不会受到影响了。
+	    　　alert(Doctor.birthPlaces); //北京, 上海, 香港, 厦门
+	    　　alert(Chinese.birthPlaces); //北京, 上海, 香港
+	目前，jQuery库使用的就是这种继承方法。		
+	
+
+
+
+
+
+
+	
+
+20171027
+javascript类深入学习
+一：理解构造函数原型(prototype)机制
+	prototype是javascript实现与管理继承的一种机制，也是面向对象的设计思想.构造函数的原型存储着引用对象的一个指针，
+	该指针指向与一个原型对象，对象内部存储着函数的原始属性和方法；我们可以借助prototype属性，可以访问原型内部的属性和方法。
+	当构造函数被实列化后，所有的实例对象都可以访问构造函数的原型成员，如果在原型中声明一个成员，所有的实列方法都可以共享它，
+	即 js 函数 有三部分组成内容:
+		1,函数代码本身!! 还有函数 因为都能实例化一个对象,所以都可以称为构造函数
+		2,js自动为函数 划分一个空间放 函数的prototyte内容,这里称这个空间为函数原型
+		3,new 函数() 时,会实例化一个新对象,划分一个新的空间,存放函数执行过程中的生成的所有内容,
+		  也含有指向原型(即prototyte内容)的一个指针
+	例如:
+		// 构造函数A 
+		function A(name){
+		    this.name = name;
+		}
+		//函数A 的原型有一个getName方法
+		A.prototype.getName = function(){
+		    return this.name;
+		}
+		// 实列化2次后 该2个实列都有原型getName方法；如下代码
+		var instance1 = new A("longen1");
+		var instance2 = new A("longen2");
+		console.log(instance1.getName()); //longen1
+		console.log(instance2.getName()); // longen2
+	原型具有普通对象结构，可以将任何普通对象设置为原型对象; 
+	一般情况下，对象都继承与Object,也可以理解Object是所有对象的超类,
+	Object是没有原型的，而构造函数拥有原型，因此实列化的对象也是Object的实列
+	例如:
+		// 实列化对象是构造函数的实列
+		console.log(instance1 instanceof A); //true
+		console.log(instance2 instanceof A); // true	
+		// 实列化对象也是Object的实列
+		console.log(instance1 instanceof Object); //true
+		console.log(instance2 instanceof Object); //true
+		//Object 对象是所有对象的超类，因此构造函数也是Object的实列
+		console.log(A instanceof Object); // true
+		// 但是实列化对象 不是Function对象的实列 如下代码
+		console.log(instance1 instanceof Function); // false
+		console.log(instance2 instanceof Function); // false	
+		// 但是Object与Function有关系 如下代码说明
+		console.log(Function instanceof Object);  // true
+		console.log(Object instanceof Function);  // true
+		//Function是Object的实列，也可以是Object也是Function的实列;他们是2个不同的构造器
+		//但是实在不知道如何理解
+		//我们知道 object 就是我们熟悉的对象, 对象就是一个被划分的空间,存放着各种数据,
+		//var 的类型可以是对象, 一个函数实例化 也是对象
+		//但是 这里的 function 就真不知道中那么理解
+	再看例子://虽然不知道怎么理解 f
+		var f = new Function();
+		var o = new Object();
+		console.log("------------"); 
+		console.log(f instanceof Function);  //true
+		console.log(o instanceof Function);  // false
+		console.log(f instanceof Object);    // true
+		console.log(o instanceof Object);   // true
+	在原型上增加成员属性或者方法时,增加的内容会被所有的实列化对象所共享
+	但如果 实列化对象有成员 和原型的成员 名字相同时，那么优先使用本实列化对象的成员，
+	如果 实列对象中没有这个名字的你成员时，那么实列对象会到原型中去查找该成员，
+	如果原型找到就返回，否则的会返回undefined
+	例如:
+		function B(){
+		    this.name = "longen2";
+		}
+		B.prototype.name = "AA";
+		B.prototype.getName = function(){
+		    return this.name;
+		};	
+		var b1 = new B();
+		// 在本实列查找，找到就返回，否则到原型查找
+		console.log(b1.name); // longen2
+		// 在本实列没有找到该方法，就到原型去查找
+		console.log(b1.getName());//longen2
+		// 如果在本实列没有找到的话，到原型上查找也没有找到的话，就返回undefined
+		console.log(b1.a); // undefined
+		// 现在我使用delete运算符删除本地实列属性，那么取到的是就是原型属性了，如下代码：
+		delete b1.name;
+		console.log(b1.name); // AA
+二：理解原型域链的概念
+	原型的优点是能够以对象结构为载体，创建大量的实列，
+	这些实列能共享原型中的成员(属性和方法);同时也可以使用原型实现面向对象中的继承机制
+		function AA(x){
+		    this.x = x;
+		}
+		function BB(x) {
+		    this.x = x;
+		}
+		BB.prototype = new AA(11);
+		console.log(BB.prototype.x); //11
+	再如	
+		function A(x) {
+		    this.x = x;
+		}
+		A.prototype.x = 0;	// 在A的原型上定义一个属性x = 0
+		function B(x) {
+		    this.x = x;
+		}
+		B.prototype = new A(1);
+		//实列化A new A(1)的时候 在A函数内this.x =1， 
+		//B.prototype = new A(1); 实列化A()这个对象给了B.prototype 相当于B继承于A,
+		//那么 B.prototype.x = 1; 
+		console.log(B.prototype.x); // 1
+	继续
+		function C(x) {
+		    this.x = x;
+		}				// 定义C的构造函数
+		C.prototype = new B(2);
+		//C.prototype = new B(2); 实列化B()这个对象给了C.prototype 相当于C继承于B,
+		//那么C.prototype.x = 2
+		console.log(C.prototype.x); // 2
+	继续
+		var d = new C(3);
+		console.log(d.x); // 3
+		//这时,删除d.x ,即 实例化C(3) 中的 x 被删掉了,但是实例化C(3)仍然存在,所以 d 还在
+		//再访问d.x的时候 本实列对象被删掉，只能从原型上去查找；
+		//由于C.prototype = new B(2); 也就是C继承于B，因此C的原型也有x = 2；即C.prototype.x = 2;
+		//而d.x 会指向这个 C.prototype.x,而 C.prototype.x 就是 实例化B(2)
+		delete d.x;
+		console.log(d.x);  //2
+	继续
+		//这时删除C.prototype.x，我们从上面代码知道，即C.prototype 指向的 实例化B(2)的 x 被删除了!!
+		//关系链如下:
+		// d.x 寻求 C.prototype.x ,
+		// C.prototype.x 就是 实例化B(2)的x, 于是 C.prototype.x被删,就是 实例化B(2)的x 被删
+		// 于是 C.prototype.x 寻求 B.prototype.x, 即就是 实例化B(2)的x 寻求 B.prototype.x
+		// B.prototype.x = 1, 最后 d.x 也就 等于1
+		delete C.prototype.x;
+		console.log(d.x);  // 1
+	继续
+		//这时删除 B.prototype.xx后，即B.prototype 指向的 实例化A(1)的 x 被删除了!!    
+		//关系链变成这样:
+		// d.x 寻求 C.prototype.x ,
+		// C.prototype.x 就是 实例化B(2)的x, 于是 C.prototype.x被删,就是 实例化B(2)的x 被删
+		// 于是 C.prototype.x 寻求 B.prototype.x, 即就是 实例化B(2)的x 寻求 B.prototype.x
+		// B.prototype.x 就是 实例化A(1)的x, 于是 B.prototype.x被删,就是 实例化A(1)的x 被删
+		// 于是 B.prototype.x 寻求 A.prototype.x , 即就是 实例化A(1)的x 寻求 A.prototype.x
+		// A.prototype.x = 0 所以最后 d.x 也就 等于0
+		delete B.prototype.x;
+		console.log(d.x);  // 0
+	继续
+		//继续删除A的原型x后,即删除 A.prototype.x = 0 
+		//依上述分析 A.prototype 并没有继承其他实例化函数,A.prototype.x是直接赋值的,
+		//所以A.prototype.x 寻找 x 的工作就此结束, 
+		//表示没有 x 这个变量, 所以返回undefined了;
+		delete A.prototype.x;
+		console.log(d.x);  // undefined
+	//难理解的内容:
+	javascript中，一切都是对象，Function和Object都是函数的实列;  //Function 和 object 实例的概念难懂
+		构造函数的父原型指向于Function原型，
+		Function.prototype的父原型指向与Object的原型，
+		Object的父原型也指向与Function原型，
+		Object.prototype是所有原型的顶层;
+	例如:
+		Function.prototype.a = function(){
+		    console.log("我是父原型Function");
+		}
+		Object.prototype.a = function(){
+		    console.log("我是 父原型Object");
+		}
+		function A(){
+		    this.a = "a";
+		}
+		A.prototype = {
+		    B: function(){
+		        console.log("b");
+		    }
+		}
+		//函数A 是 Function 的实例,也是 Object的实列 如下：
+		console.log(A instanceof Function);  // true
+		console.log(A instanceof Object); // true
+		// A.prototype是一个对象，它是Object的实列，但不是Function的实列
+		console.log(A.prototype instanceof Function); // false
+		console.log(A.prototype instanceof Object); // true
+		// Function是Object的实列 同是Object也是Function的实列
+		console.log(Function instanceof Object);   // true
+		console.log(Object instanceof Function); // true
+		/*
+		 * Function.prototype是Object的实列 但是Object.prototype不是Function的实列
+		 * 说明Object.prototype是所有父原型的顶层
+		 */
+		console.log(Function.prototype instanceof Object);  //true
+		console.log(Object.prototype instanceof Function);  // false
+三：理解原型继承机制
+	构造函数都有一个指针指向原型，Object.prototype是所有原型对象的顶层，比如如下代码：
+		var obj = {};
+		Object.prototype.name = "tugenhua";
+		console.log(obj.name); // tugenhua
+	给Object.prototype 定义一个属性，通过字面量构建的对象的话，都会从父类那边获取Object.prototype的属性；
+	从上面代码我们知道，原型继承的方法是：假如A需要继承于B，
+	那么A.prototype(A的原型) = new B()（作为B的实列） 即可实现A继承于B; 
+	因此我们下面可以初始化一个空的构造函数;然后把对象赋值给构造函数的原型，然后返回该构造函数的实列； 即可实现继承;
+	例如
+		if(typeof Object.create !== 'function') {
+		    Object.create = function(o) {
+		        var F = new Function();
+		        F.prototype = o;
+		        return new F();
+		    }
+		}
+		var a = {
+		    name: 'longen',
+		    getName: function(){
+		        return this.name;
+		    }
+		};
+		var b = {};
+		b = Object.create(a);
+		console.log(typeof b); //object
+		console.log(b.name);   // longen
+		console.log(b.getName()); // longen
+		//如上代码:我们先检测Object是否已经有Object.create该方法;如果没有的话就创建一个； 
+		//该方法内创建一个空的构造器，把参数对象传递给构造函数的原型，最后返回该构造函数的实列，就实现了继承方式；
+		//如上测试代码：先定义一个a对象，有成员属性name='longen'，还有一个getName()方法;最后返回该name属性; 
+		//然后定义一个b空对象，使用Object.create(a);把a对象继承给b对象，因此b对象也有属性name和成员方法getName();
+	理解原型查找原理：对象查找先在该构造函数内查找对应的属性，
+	如果该对象没有该属性的话，那么javascript会试着从该原型上去查找，
+	如果原型对象中也没有该属性的话，那么它们会从原型中的原型去查找，
+	直到查找的Object.prototype也没有该属性的话，那么就会返回undefined;
+	因此我们想要仅在该对象内查找的话，为了提高性能，我们可以使用hasOwnProperty()来判断该对象内有没有该属性，(并不会查找原型)
+	如果有的话，就执行代码(使用for-in循环查找)：
+	例子:
+		var obj = {
+		    "name":'tugenhua',
+		    "age":'28'
+		};
+		// 使用for-in循环
+		for(var i in obj) {
+		    if(obj.hasOwnProperty(i)) {
+		        console.log(obj[i]); //tugenhua 28
+		    }
+		}
+		//如上使用for-in循环查找对象里面的属性，
+		//但是我们需要明白的是：for-in循环查找对象的属性，它是不保证顺序的，
+		//for-in循环和for循环；最本质的区别是：for循环是有顺序的，for-in循环遍历对象是无序的，
+		//因此我们如果需要对象保证顺序的话，可以把对象转换为数组来，然后再使用for循环遍历即可;
+	下面我们来谈谈原型继承的优点和缺点 
+	例子:
+		// 先看下面的代码：
+		// 定义构造函数A，定义特权属性和特权方法
+		function A(x) {
+		    this.x1 = x;
+		    this.getX1 = function(){
+		        return this.x1;
+		    }
+		}
+		// 定义构造函数B，定义特权属性和特权方法
+		function B(x) {
+		    this.x2 = x;
+		    this.getX2 = function(){
+		        return this.x1 + this.x2;
+		    }
+		}
+		B.prototype = new A(1);
+	B.prototype = new A(1);这句代码执行的时候,B的原型继承于A，
+	因此B.prototype也有A的属性和方法,即：B.prototype.x1 = 1; B.prototype.getX1 方法；
+	但是B也有自己的特权属性x2和特权方法getX2;
+	继续
+		function C(x) {
+		    this.x3 = x;
+		    this.getX3 = function(){
+		        return this.x3 + this.x2;
+		    }
+		}
+		C.prototype = new B(2);
+	C.prototype = new B(2);这句代码执行的时候,C的原型继承于B，因此C.prototype.x2 = 2; 
+	C.prototype.getX2方法且C也有自己的特权属性x3和特权方法getX3,
+	继续
+		var b = new B(2);
+		var c = new C(3);
+		console.log(b.x1);  // 1
+		console.log(c.x1);  // 1
+		console.log(c.getX3()); // 5
+		console.log(c.getX2()); // 3
+		var b = new B(2); 
+	实列化B的时候 b.x1 首先会在构造函数内查找x1属性，没有找到，
+	由于B的原型继承于A，因此A有x1属性，因此B.prototype.x1 = 1找到了;
+	var c = new C(3); 实列化C的时候，从上面的代码可以看到C继承于B，B继承于A，
+	因此在C函数中没有找到x1属性，会往原型继续查找，直到找到父元素A有x1属性，
+	因此c.x1 = 1;c.getX3()方法; 返回this.x3+this.x2 this.x3 = 3;
+	this.x2 是B的属性，因此this.x2 = 2;c.getX2(); 查找的方法也一样，不再解释
+	所以prototype的缺点与优点如下：
+		优点是：能够允许多个对象实列共享原型对象的成员及方法，
+		缺点是：1. 每个构造函数只有一个原型，因此不直接支持多重继承;
+		       2. 不能很好地支持多参数或动态参数的父类。在原型继承阶段，用户还不能决定以什么参数来实列化构造函数。
+四：理解使用类继承(继承的更好的方案)
+	类继承也叫做构造函数继承，在子类中执行父类的构造函数；
+	实现原理是：可以将一个构造函数A的方法赋值给另一个构造函数B，
+	然后调用该方法，使构造函数A在构造函数B内部被执行，这时候构造函数B就拥有了构造函数A中的属性和方法，
+	这就是使用类继承实现B继承与A的基本原理；
+	例如:
+		function A(x) {
+		    this.x = x;
+		    this.say = function(){
+		        return this.x;
+		    }
+		}
+		function B(x,y) {
+		    this.m = A; // 把构造函数A作为一个普通函数引用给临时方法m
+		    this.m(x);  // 执行构造函数A;
+		    delete this.m; // 清除临时方法this.m
+		    this.y = y;
+		    this.method = function(){
+		        return this.y;
+		    }
+		}
+		var a = new A(1);
+		var b = new B(2,3);
+		console.log(a.say()); 	 // 输出1, 在执行构造函数A中的say方法
+		console.log(b.say());    // 输出2, 能执行该方法说明被继承了A中的方法
+					 // this.m(x);时,已经实例化了一个对象,并内嵌存到 b对象里
+					 // delete this.m; 只是清除了 this.m 这个对象数据,并不会把刚刚的实例化对象也删掉
+		console.log(b.method()); // 输出3， 构造函数也拥有自己的方法
+	上面的代码实现了简单的类继承的基础，但是在复杂的编程中是不会使用上面的方法的，
+	因为上面的代码不够严谨；代码的耦合性高；我们可以使用更好的方法如下：//这个方法从代码上看不好理解!!
+	例如:
+		function A(x) {
+		    this.x = x;
+		}
+		A.prototype.getX = function(){
+		    return this.x;
+		}
+		// 实例化A
+		var a = new A(1);
+		console.log(a.x); // 1
+		console.log(a.getX()); // 输出1
+		// 现在我们来创建构造函数B，让其B继承与A，如下代码：
+		function B(x,y) {
+		    this.y = y;
+		    A.call(this,x);	
+		}
+		B.prototype = new A();  // 原型继承,这里居然不带参数好迷惑!!
+		console.log(B.prototype.constructor); // 输出构造函数A，指针指向与构造函数A
+		B.prototype.constructor = B;          // 重新设置构造函数，使之指向B
+		console.log(B.prototype.constructor); // 指向构造函数B
+		B.prototype.getY = function(){
+		    return this.y;
+		}
+		var b = new B(1,2);
+		console.log(b.x); // 1
+		console.log(b.getX()); // 1
+		console.log(b.getY()); // 2
+		// 下面是演示对构造函数getX进行重写的方法如下：
+		B.prototype.getX = function(){
+		    return this.x;
+		}
+		var b2 = new B(10,20);
+		console.log(b2.getX());  // 输出10
+	下面我们来分析上面的代码：
+	在构造函数B内，使用A.call(this,x);这句代码的含义是：我们都知道使用call或者apply方法可以改变this指针指向，
+	从而可以实现类的继承，因此在B构造函数内，把x的参数传递给A构造函数，并且继承于构造函数A中的属性和方法；
+	使用这句代码：B.prototype = new A();  可以实现原型继承，也就是B可以继承A中的原型所有的方法；
+	console.log(B.prototype.constructor); 打印出输出构造函数A，指针指向与构造函数A；
+	我们明白的是，当定义构造函数时候，其原型对象默认是一个Object类型的一个实例，其构造器默认会被设置为构造函数本身，
+	如果改动构造函数prototype属性值，使其指向于另一个对象的话，那么新对象就不会拥有原来的constructor的值，
+	比如第一次打印console.log(B.prototype.constructor); 指向于被实例化后的构造函数A，
+	重写设置B的constructor的属性值的时候，第二次打印就指向于本身B；
+	因此B继承与构造A及其原型的所有属性和方法，当然我们也可以对构造函数B重写构造函数A中的方法，
+	如上面最后几句代码是对构造函数A中的getX方法进行重写，来实现自己的业务~；
+五：建议使用封装类实现继承
+	封装类实现继承的基本原理：
+	先定义一个封装函数extend；该函数有2个参数，Sub代表子类，Sup代表超类；
+	在函数内，先定义一个空函数F, 用来实现功能中转，
+	先设置F的原型为超类的原型，然后把空函数的实例传递给子类的原型，
+	使用一个空函数的好处是：避免直接实例化超类可能会带来系统性能问题，比如超类的实例很大的话，实例化会占用很多内存；
+	例如:
+		function extend(Sub,Sup) {
+		    //Sub表示子类，Sup表示超类
+		    // 首先定义一个空函数
+		    var F = function(){};
+		    // 设置空函数的原型为超类的原型
+		    F.prototype = Sup.prototype; 
+		    // 实例化空函数，并把超类原型引用传递给子类
+		    Sub.prototype = new F();           
+		    // 重置子类原型的构造器为子类自身
+		    Sub.prototype.constructor = Sub;        
+		    // 在子类中保存超类的原型,避免子类与超类耦合
+		    Sub.sup = Sup.prototype;	
+		    if(Sup.prototype.constructor === Object.prototype.constructor) {
+		        // 检测超类原型的构造器是否为原型自身
+		        Sup.prototype.constructor = Sup;
+		    }	
+		}
+	测试代码如下：
+		// 下面我们定义2个类A和类B，我们目的是实现B继承于A
+		function A(x) {
+		    this.x = x;
+		    this.getX = function(){
+		        return this.x;
+		    }
+		}
+		A.prototype.add = function(){
+		    return this.x + this.x;
+		}
+		A.prototype.mul = function(){
+		    return this.x * this.x;
+		}
+		// 构造函数B
+		function B(x){
+		    A.call(this,x); // 继承构造函数A中的所有属性及方法
+		}
+		extend(B,A);  // B继承于A
+		var b = new B(11);
+		console.log(b.getX()); // 11
+		console.log(b.add());  // 22
+		console.log(b.mul());  // 121
+	注意：在封装函数中，有这么一句代码：Sub.sup = Sup.prototype; 我们现在可以来理解下它的含义：
+	比如在B继承与A后，我给B函数的原型再定义一个与A相同的原型相同的方法add();
+	继续
+		extend(B,A);  // B继承于A
+		var b = new B(11);
+		B.prototype.add = function(){
+		    return this.x + "" + this.x;
+		}
+		console.log(b.add()); // 1111
+	那么B函数中的add方法会覆盖A函数中的add方法；因此为了不覆盖A类中的add()方法，且调用A函数中的add方法；可以如下编写代码：
+		B.prototype.add = function(){
+		    //return this.x + "" + this.x;
+		    return B.sup.add.call(this);
+		}
+		console.log(b.add()); // 22
+	B.sup.add.call(this); 中的B.sup就包含了构造函数A函数的指针，因此包含A函数的所有属性和方法；因此可以调用A函数中的add方法；
+	如上是实现继承的几种方式，类继承和原型继承，
+	但是这些继承无法继承DOM对象，也不支持继承系统静态对象，静态方法等；比如Date对象如下：
+		// 使用类继承Date对象
+		function D(){
+		    Date.apply(this,arguments); // 调用Date对象，对其引用，实现继承
+		}
+		var d = new D();
+		console.log(d.toLocaleString()); // [object object]
+	如上代码运行打印出object，我们可以看到使用类继承无法实现系统静态方法date对象的继承，
+	因为他不是简单的函数结构，对声明，赋值和初始化都进行了封装，因此无法继承；
+	下面我们再来看看使用原型继承date对象；
+		function D(){}
+		D.prototype = new D();
+		var d = new D();
+		console.log(d.toLocaleString());//[object object]
+	我们从代码中看到，使用原型继承也无法继承Date静态方法；但是我们可以如下封装代码继承：
+		function D(){
+		    var d = new Date();  // 实例化Date对象
+		    d.get = function(){ // 定义本地方法，间接调用Date对象的方法
+		        console.log(d.toLocaleString());
+		    }
+		    return d;
+		}
+		var d = new D();
+		d.get(); // 2015/12/21 上午12:08:38
+		//也就说 Date() 只有可以被实例化,不能被直接继承,只能被继承实例化的内容
+六：理解使用复制继承
+	复制继承的基本原理是：先设计一个空对象，然后使用for-in循环来遍历对象的成员，
+	将该对象的成员一个一个复制给新的空对象里面;这样就实现了复制继承了;如下代码：
+	例如:
+		function A(x,y) {
+		    this.x = x;
+		    this.y = y;
+		    this.add = function(){
+		        return this.x + this.y;
+		    }
+		}
+		A.prototype.mul = function(){
+		    return this.x * this.y;
+		}
+		var a = new A(2,3);
+		var obj = {};
+		for(var i in a) {
+		    obj[i] = a[i];
+		}
+		console.log(obj); // object
+		console.log(obj.x); // 2
+		console.log(obj.y); // 3
+		console.log(obj.add()); // 5  从这里更好理解 obj是一个实例化A()对象,因为.add() 和 .mul()也是当中的内嵌对象,
+		console.log(obj.mul()); // 6  虽然本能认为这两个是函数,没能接受他们也是个对象数据
+					//而这些函数里的用到参数,也在这个实例化A()对象!!!!这是重点,所以有输出结果
+	如上代码：先定义一个构造函数A，函数里面有2个属性x,y,还有一个add方法，
+	该构造函数原型有一个mul方法，首先实列化下A后，再创建一个空对象obj，遍历对象一个个复制给空对象obj，
+	从上面的打印效果来看，我们可以看到已经实现了复制继承了;对于复制继承，我们可以封装成如下方法来调用:
+		// 为Function扩展复制继承方法
+		Function.prototype.extend = function(o) {
+		    for(var i in o) {
+		        //把参数对象的成员复制给当前对象的构造函数原型对象
+		        this.constructor.prototype[i] = o[i];
+		    }
+		}
+		// 测试代码如下：
+		var o = function(){};
+		o.extend(new A(1,2));
+		console.log(o.x);  // 1
+		console.log(o.y);  // 2
+		console.log(o.add()); // 3
+		console.log(o.mul()); // 2
+	上面封装的扩展继承方法中的this对象指向于当前实列化后的对象，而不是指向于构造函数本身，
+	因此要使用原型扩展成员的话，就需要使用constructor属性来指向它的构造器，然后通过prototype属性指向构造函数的原型；
+	复制继承有如下优点：
+	 1. 它不能继承系统核心对象的只读方法和属性
+	 2. 如果对象数据非常多的话，这样一个个复制的话，性能是非常低的;
+	 3. 只有对象被实列化后，才能给遍历对象的成员和属性，相对来说不够灵活;	
+	 4. 复制继承只是简单的赋值，所以如果赋值的对象是引用类型的对象的话，
+	    可能会存在一些副作用;如上我们看到有如上一些缺点，下面我们可以使用clone(克隆的方式)来优化下：
+	基本思路是：为Function扩展一个方法，该方法能够把参数对象赋值赋值一个空构造函数的原型对象，
+	然后实列化构造函数并返回实列对象，这样该对象就拥有了该对象的所有成员;代码如下：
+		Function.prototype.clone = function(o){
+		    function Temp(){};
+		    Temp.prototype = o;
+		    return Temp();
+		}
+		// 测试代码如下：
+		Function.clone(new A(1,2));
+		console.log(o.x);  // 1
+		console.log(o.y);  // 2
+		console.log(o.add()); // 3
+		console.log(o.mul()); // 2
+
+
+
+
+
+
+
+
+
+
+20171028
+分析跑页游 记录
+	BcakGround 比较简单不参与交互,自个在循环变化!!!
+	mapfloor 地板是重点!! 从独立js 看不出是什么乾坤 还有 floor !!!!! 原来是两个结合使用的
+	energybar 看不到重点
+	player 也看不到重点!!!
+
+
+
+
+
+
+
+20171030
+laya_demo (js)
+https://ask.layabox.com/question/317 打飞机	(分析完)
+http://blog.csdn.net/chenluliang/article/details/77879291	DNF	(分析中)
+https://ask.layabox.com/question/629	跑酷	(学习分析完)
+https://github.com/lanbomo/laya-snakes 贪吃蛇	(TS 的,所以先不分析)
+https://ask.layabox.com/question/548	跑酷改	(分析完)
+https://ask.layabox.com/question/5889 打地鼠	(分析完)
+
+
+
+
+
+
+
+20171101
+小结一下: 
+	1,
+	laya 都先加载一个 onloading 的 spite 界面, 然后才继续加载其他游戏资源的
+	laya.stage.addchild();每使用一次,就会加载一个界面,而且会覆盖之前界面
+	2,
+	游戏的移动实现,通过spite 对象的 坐标变化实现, 基础的碰撞检测也是基于 spite 坐标的检测
+	3,
+	作为一个网游,需要源源不断地发送 数据到服务端,服务端又发到其他链接上的客户端
+	这个交互数据工作,使用 websocket 实现,所以 
+接下来要掌握的内容是: 
+	websocket多人连接,还有各种测试
+	图集图片的制作
+		分解 gif 
+		打包 图片等等!!!
+websocket继续深入:
+	html5_learn/php_learn/websocket 里的 server 只能与一位用户连接,而且客户端与服务器的地址一定要一样,哪怕是127.0.0.1 !!!
+	html5_learn/php_learn/websoket-php-chat 里的server 与能与多位用户链接,但是 server地址你不能127,否则内网其他机子连不上
+	重点分析 websoket-php-chat 里的server
+	从 server 端中学到的一些 php 内容:
+		语法1:(关于数组的语法)
+		...
+	        $this->users[$key]=array(
+	          'socket'=>$client,  //记录新连接进来client的socket信息
+	          'shou'=>false       //标志该socket资源没有完成握手
+	        );
+		...
+	        //根据socket在user池里面查找相应的$k,即健ID
+	        $k=$this->search($sock);
+		....
+		function search($sock){
+			foreach ($this->users as $k=>$v){
+				if($sock==$v['socket'])
+				return $k;
+			}
+			return false;
+		}
+		//首先这里 $client 和 $sock 是同一个文件描述符, 
+		//search 功能是 通过 $client 找到对应的 users[$key] 里的 $key
+		//foreach中 $k 表示的是users数组的成员标识[]里的内容, $v代表内嵌数组!!!!
+		//$v['socket'] 表示内嵌数组中,成员标识为字符串'socket'的成员
+		语法2:(关于数组的语法)
+		$this->sockets=array($this->master);
+		foreach($this->users as $v){
+			$this->sockets[]=$v['socket'];
+		}
+		//数组的初始化 一般可以这样子 :
+		//	var bb = array(); 	//初始化 bb 是一个数组变量
+		//	var bb = array($ddd); 	//也可以这样 初始化 bb 是一个数组变量并塞入第一个成员 $ddd, 
+		//	var bb[] = $ddd1;	//往数组 bb 继续塞成员 $ddd1 []表示成员指定数组标识!!!
+		//	var bb[78] = array('df'=>$ghj , 'ok'=>$lll);
+		//	//表示数组 bb中 数字变量78标识的成员是一个内嵌数组成员
+		//	//内嵌数组成员中 字符串'df'标识的成员是$ghj,字符串'ok'标识的成员是$lll,
+	server本身关于websocket 建立的概念内容:
+		//创建socket操作
+		$server = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+		socket_set_option($server, SOL_SOCKET, SO_REUSEADDR, 1);//1表示接受所有的数据包
+		socket_bind($server, $address, $port);
+		socket_listen($server);
+		return $server;		//最后得到的是一个监听状态,等待连接的socket文件描述符
+					//注意这个返回的 socket是个监听 连接的socket
+					//也就是说,我们创建的 socket 只用来监听 连接信息,并不会进行连接后的数据交互活动 
+		/*
+		socket_select ($sockets, $write = NULL, $except = NULL, NULL);
+    		这个函数是同时接受多个连接的关键，这个函数是监视所有 正在监听数据的socket, 所以一直阻塞程序
+		直到有socket收到了数据,返回
+		$sockets是一个数组，这个数组中存放的是文件描述符。一开始,这个数组里 包含说有 正在监听数据的socket
+			返回时,$sockets数组只含有那些监听得到数据的 socket,然后供程序进一步处理
+			重新执行 socket_select前, 要把 $sockets 改回来 包含说有 正在监听数据的socket
+		$write是监听是否有客户端写数据，传入NULL是不关心是否有写变化。
+		$except是$sockets里面要被排除的元素，传入NULL是”监听”全部。
+		最后一个参数是超时时间
+			如果为0：则立即结束
+			如果为n>1: 则最多在n秒后结束，如遇某一个连接有新动态，则提前返回
+			如果为null：如遇某一个连接有新动态，则返回
+		*/
+		$changes=$this->sockets;	//表示 要监视的是 所有监听中的socket
+		socket_select($changes,$write,$except,NULL);	//开始监视并 阻塞等待!!
+		//第一次socket_select返回时,必定是有机子想连进服务器来,然后会执行socket_accept 
+		$client=socket_accept($this->master); 
+			//使用 $this->master 是那个一开始初始化,只监听连接信息的socket
+			//socket_accept会先拷贝一个新socket,会把所有请求连接的缓存信息都剪切到这个socket.
+			//返回这个socket,但是还没有完成来连接
+			//把给这个新 socket 提供一个 新 key
+			//        $this->users[$key]=array(
+			//          'socket'=>$client,  //记录新连接进来client的socket信息
+			//          'shou'=>false       //标志该socket资源没有完成握手
+			//        );
+		//然后重新监视所有socket,由于这个新socket 本身就有被拷贝过来的缓存信息,未处理,所以socket_select又返回
+		//然后跳到处理这个新socket缓存数据,执行握手连接操作!!
+		//拷贝过来的缓存信息里,有一个 机子发来的 key
+			$key  = trim(substr($buf,0,strpos($buf,"\r\n")));
+		//我们吧可以用 sha1 方式编码
+			$new_key = base64_encode(sha1($key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));	
+		//注意,握手就是,发送一段返回信息,包括这个 sha1 编码的 key,然后就算成功握手了!!! 		   
+			$new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";	
+			socket_write($this->users[$k]['socket'],$new_message,strlen($new_message));
+		//然后下次这个新socket收到的数据就是就是我们实际上用户交互的数据了!!!!
+	websocket 连接上后,数据交互的内容内容,重点
+		假设 socket_select 返回后,得到一个 获得了内容的socket
+		我们要吧内容从socket里提出来, 多次调用 socket_recv;
+			socket_recv($sock,$buf,1000,0);	
+			//表示一次预期从 $sock文件描述符指向的 socket文件里 读出 1000个字节到 buf上
+			//成功后,返回实际读取到了多少个字节到 buf上!!
+		把每次socket_recv读出的 buf 内容,拼接放入 buffer ,最终得到完整的 socket文件的内容
+		这是一段压缩的 编码了的内容,但是并不是使用key或者 sha1 加密的内容
+		只需要解压,解码就可以.
+	从中学到的 php 函数
+		$msg = unpack('H*',$str); //以十六进制高思位在前的形式解压内容
+		$head = substr($msg[1],0,2); //返回 内容里的头信息, 这里的 $msg数组只有一个成员,而且标记是数字1,而不是数字0!! 
+		hexdec() 函数把十六进制转换为十进制
+		parse_str(string,array); //把字符串string 以&分割符号拆分成成员,再存到 array数组里
+			parse_str("name=Bill&age=60");
+			echo $name."<br>";
+			echo $age;
+		unset — 释放给定的变量
+
+
+
+
+
+
+20171108
+网游实验(所有基本功能!):
+	建立图集动画,并按键移动
+	初始化,(各种屏幕适应)
+	加背景,(直接用 Sprite drawTexture)
+	加按钮,(使用系统自动带的 按钮套件)
+	按钮事件, 全局变量通过承接指针得到控制变量的入口给按钮事件处理
+	加人物,(使用继承Sprite,方式)
+	人物frameonloop.
+	加弹窗(使用UI),复习下UI编辑窗口的操作
+		UI编辑器新建 view
+		每个添加到 viewUI 上的套件最好加上 var 变量,方便调用
+	`	还有把资源文件夹拖到 UI编辑器左下的资源框可以添加资源,
+		按f12后,会自动为这个资源包打包成 json和图包png 到res/atlas中去
+		但是要使用这个UI时,代码中还是要把要用到的资源包加入loader.load上!!
+	如何建立数组,每个成员都是新增一个类成员!!! 例子:
+		var scr = Array();
+		var i = 0;
+		for(...){
+			i += 1 ;
+			var scr[i] = new xxxUI();	//[]中的标签除了是数字变量外,也可以是字符串变量
+		}
+	建立客户端和服务端!!
+		假设是在 win wampserver64 上运行
+			假设像聊天软件一样有客户端,服务端两套代码,机子上肯定要先运行服务端程序的,然后在通过浏览器浏览客户端
+			现在虽然 安装了wampserver服务器集成环境,但是环境运作后,只能做 浏览器访问客户端的操作,
+			却不知道怎么打开服务端,wampserver服务器集成环境也简称服务端,常常互相混混淆
+			wampserver服务器集成环境,主要提供服务器功能,可以存放网站!!!供远程机子访问
+			聊天软件的服务端,只是聊天软件这个项目的一个在服务器上默默执行的后台程序!!!
+			那么,怎么执行这个后台程序? 未知如何塞到 wampserver服务器集成环境里,让他捆绑启动!!!
+			但有一种方法, 通过 cmd 命令行:
+				由于安装了wampserver服务器集成环境,所以自带了php解析器,找到所在路径:
+				例如:C:\wamp64\bin\php\php5.6.31
+				右击我的电脑->属性->高级系统设置->环境变量->修改 PATH 的值,往后添加;C:\wamp64\bin\php\php5.6.31->确定
+				然后打开 cmd.exe 输入指令
+				php C:\wamp64\www\websoket-php-chat\websocket.php   成功执行软件的服务端后台程序
+				然后浏览器登录 client.html 成功登录!!
+		解释如何部署使用 客户端和服务端, 开始移植到游戏里!!
+		js客户端重点:
+			xx = new WebSocket(...)		//建立连接
+			xx.onopen = function(){..}	//连接后做的第一件事,也就是说成功建立打开socket后用户定义要做的事
+			xx.onclose = function(){...}	//断开连接后做的事,即 关闭socket时,用户定义要做的事
+			xx.onmessage = function(msg){...}	//当收到数据后,就触发的事情
+			xx.onerror = function(){...}	//出错时,中断处理	
+			//注意由于使用laya,更方便调试,可使用 console.log("djdjdjdj");
+			//特别是 onmessage 会得到一个参数,给 xx.onmessage = function(msg){...}中的 msg
+			//而 msg.data就是 监听得到的字符串内容,注意,是字符串,一般是json格式的文本,
+			//现在demo是一条信息一个弹窗!!
+			//所以需要对文本进行处理,提取处理相关数据!!(后面再分析处理)
+			//layai项目上的客户端例子:
+				function client(){
+				    var url = 'ws://127.0.0.1:8000';
+				    var n = "jack";
+				    var ws = false;
+				    var scr = Array();
+				    var i = 0;
+
+				    ws = new WebSocket(url);
+				    ws.onopen = function (){
+				        if( ws.readyState ==1 )
+				            ws.send('type=uu&ming='+n);
+				    }
+				    ws.onclose = function (){
+				        console.log("C");
+				        ws = false;
+				    }
+				    ws.onmessage = function (msg){
+				        console.log("M");
+				        //弹出弹窗
+				        i += 1;
+				        scr[i] = new tanchuangUI();
+				        scr[i].txt.text = msg.data;
+				        scr[i].x = 200;
+				        scr[i].y = 200;
+				        Laya.stage.addChild(scr[i]);
+				        scr[i].out.on(Event.CLICK,this,onout1Click);
+				    }
+				    ws.onerror = function (){
+				        console.log("E");
+				    }
+				    function onout1Click () {
+				        Laya.stage.removeChild(scr[i]);
+				        i -= 1;
+				    }
+				}
+			//然后在主程序上调用					
+		js的数据websocket数据处理:
+			例如:
+			{"type":"rmove","nrong":"5a02ace5d7ec9","code1":"all","code":false,"time":"11-08 09:05:04"}
+			或者例如:
+			{"nrong":"fghjkl","code1":"all","code":"5a02ace5d7ec9","time":"11-08 08:40:39"}
+			这是一段收到的完整的json内容 放在onmessage的变量 msg.data上!!!
+			eval('var da='+msg.data);	//把字符串解析成js命令执行,并返回字符串长度.
+			执行的命令也就是 var da = {"nrong":"fghjkl","code1":"all","code":"5a02ace5d7ec9","time":"11-08 08:40:39"}
+			直接把json文本转成 da 数组
+			最后只不过是处理数组的问题
+		php服务端重点:
+			由于是参考 websoket-php-chat\websocket.php,
+			握手,连接建立socket 的地方都是通用的, 注意这里会给没一个远程连接的socket分配一个独一无二的 $key
+			然后就是内容的传递
+			uncode()也是通用的,这里不是内容解密,而是内容编码的解码,什么16进制转10进制之类
+			uncode后得到 就是真正得到的内容!!! 以字符串形式存在!!
+			注意得到的内容一般是这种格式 aa=kkkk&uu=ghj&opl=yuioio
+			笔记 users[] 数组变量:记录连接的用户
+			this->users[$key] = array(
+				'socket'=>$client,	//远程客户端对应服务端这边该连接的socket
+				'shou'=>true,		//标记是否 握手连接了
+				'name'=>'jack',		//远程客户端登录的用户名
+			)
+			那么,$this->users[$key]['socket'] 指的就是 $client这个变量	
+			然后就是 需要自定义的 send函数!!
+			先把接收的数据拆分成变量放到 $g 数组里: parse_str($string,$g);
+			然后, 建立一个数组 $ar,把要发送出去的成员都赋值到里面去
+			然后, json_encode($ar); 把数组打包成一个json文本格式的 字符串
+			然后, code(这个字符串)；其实就是进制之间的编码,得到一个编码后的字符串.
+			最后,socket_write($client_socket,$编码后的字符串,字符串长度)!!
+	加入数据库和用户管理系统!!!
+		使用ui,建立一个登录界面!
+		js php 相互调用操作,
+		其实就是了解通过 js 直接提交数据给php文本,然后php返回处理结果直接給js,并不会通过html脚本的方式来实现!!
+		js直接 调用 PHP 斌没有什么好的例子,
+		实际上问题的本质是应该如何实现 laya 上传递 get post 请求到 服务端php上!!!!!
+		使用laya 提供的 httprequest 解决问题:
+		剩下问题就是移植用户管理系统了!!		
+	
+注意点:
+	虽然同一个js文件中,函数定义和函数调用位置顺序可以乱,
+		但是如果是执行跨文件执行的函数时,是有顺序之分的,执行函数的文件要发在定义文件的函数之后
+		<script src="../函数定义.js"></script>
+		<script src="../函数执行.js"></script>
+	加载资源时,
+		asset.push({
+		    url : ["res/atlas/comp.json"],	//json
+		    type : Laya.Loader.ATLAS		//但是资源的类别是ATLAS
+		})
+		加载了json后,因为json记录了图包中的位置,所以后面的使用图片数据时直接加载就是了
+		var btn = new Laya.Button("comp/button.png");
+
+
+
+
+
+
+
+
+20171110
+直播技术:
+	RTMP 推流器，RTMP播放器（秒开）
+
+
+
+
+
+
+
+20171113
+ubuntu14.04 android_studio
+方法1:(不推荐)
+	$ sudo apt-add-repository ppa:paolorotolo/android-studio
+	[sudo] password for infortech-ubuntu-1404: 
+	 Automatic builds for Android Studio by Google packaged for Ubuntu.
+	 更多信息： https://launchpad.net/~paolorotolo/+archive/ubuntu/android-studio
+	按回车继续或者 Ctrl+c 取消添加	
+	gpg: 钥匙环‘/tmp/tmp5z8v9dbp/secring.gpg’已建立
+	gpg: 钥匙环‘/tmp/tmp5z8v9dbp/pubring.gpg’已建立
+	gpg: 下载密钥‘7B9B74AA’，从 hkp 服务器 keyserver.ubuntu.com
+	gpg: /tmp/tmp5z8v9dbp/trustdb.gpg：建立了信任度数据库
+	gpg: 密钥 7B9B74AA：公钥“Launchpad PPA for Paolo Rotolo”已导入
+	gpg: 合计被处理的数量：1
+	gpg:               已导入：1  (RSA: 1)
+	OK
+	sudo apt-get update
+	sudo apt-get install android-studio
+方法2:(推荐)
+	到这里下载最新版安装包: (进入网站要翻墙,但是下载不用!!!!)
+		https://developer.android.com/		
+		android-studio: android-studio-ide-171.4408382-linux.zip
+		NDK包:android-ndk-r15c-linux-x86_64.zip	(下载了但没用到,因为直接使用ide安装了所有包!)
+	安装studio!!
+		安装支持包: sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1 libbz2-1.0:i386
+		解压studio安装包,
+		./android-studio/bin/studio.sh
+			没有自己的配置,所以不选择
+			没有sdk,所以先cancel
+			wizard,注意更改 sdk 的存放路径!!
+	新建一个project ,安卓程序需要 gradle 编译器,而pc上斌没有安装,不要紧, 这时studio系统会自动安装更新gradle
+	但是需要使用 http proxy 因为访问国外的网络!!!
+	发现,dl.google.com 地址的不用翻墙
+	原来之前是 gradle 编译器因为没有翻强的原因而没有被studio正确安装,
+		所以导致后续一系列问题,如打开不了AVD manager 等!!
+	终于使用 gradle build好了project, 准备建立一个虚拟设备(AVD)来调试!!,但是发现没有KVM!!!
+	sudo apt-get install cpu-checker		//cpu检查工具
+	kvm-ok						//cpu检查工具的命令
+	sudo apt-get install qemu-kvm libvirt-bin ubuntu-vm-builder bridge-utils	//装 qemu-kvm
+	sudo modprobe kvm_intel				//加载kvm驱动!!
+	都没有用,然后 重启 seting bios 的 Virtualization, VT for Direst I/O Access 就好
+	初始化虚拟设备还是不行, openGLES问题,其实 graphics 选择 software-gles就好了
+	总之环境都搭好了!!
+
+
+
+
+
+
+
+20171114
+android 软件框架:
+	activity 是软件中独立的工作界面, activity 有 pause,resume,stop 3状态,
+	同app activity间的数据交互用 explict intent 不同app activity间数据交互用 impiment intent
+	fragment 是工作界面上显示组件群,
+	音频:通道(媒体,通话,通知),  音频焦点(app播放音频时,需要获得音频焦点,获得播放优先权)
+	uri!!
+
+	manifest/Androidmanifest.xml (软件的综合配置文档)
+	        <activity
+	            android:name=".MainActivity"
+	            android:label="@string/app_name">
+	            <intent-filter>
+	                <action android:name="android.intent.action.MAIN" />	//指定了app打开时执行的地一个activity
+	                <category android:name="android.intent.category.LAUNCHER" />
+	            </intent-filter>
+	        </activity>
+		//如果程序中没有声明了MAIN action 或者LAUNCHER category的activity，那么在设备的主界面列表里面不会呈现app图标
+	rea/layout: 放置 activity的布局文件 xml,而xml里的内容一般有:
+		<LinearLayout> : ViewGroup子类 属于主布局句柄 用于放置水平垂直子视图部件
+		<RelativeLayout> : 属于主布局句柄 放置子视图部件比较灵活的布局
+		<TextView .../>	, <Button .../> 等这些都属于子视图句柄,表示显示在activity上,并遵循指定布局的子部件视图,
+		android:id="@+id/xxx" ,android:layout_width="wrap_content" ,android:layout_height="wrap_content"
+			等等都是 句柄内的属性内容,设定了 布局/子视图 的位置,大小等属性
+		常用属性:
+		android:id :唯一标识符号,当需要从 XML 里引用资源对象时，必须使用 @ 符号。紧随 @ 之后的是资源的类型（这里是 id），
+			    然后是资源的名字（这里使用的是 edit_message
+		android:layout_width,android:layout_height,android:layout_weight :大小尺寸,权重
+			属性参数例如有"wrap_content","0dp","1",等等,先不深究 
+		android:hint :当文本框为空时,默认显示的内容!!
+	res/values: 放置一些 指定值资源的 xml文件,例如 strings.xml,专门放置字符串资源!!
+		例子:
+		rea/layout/activity_main.xml 有个TextView部件,有个android:text属性:
+			android:text="@string/interstitial_ad_sample"
+		res/values/strings.xml 有个字符串资源:
+			<string name="interstitial_ad_sample">Interstitial Ad Sample in william</string>
+		最后仿真时会看到 那个 TextView子部件显示: Interstitial Ad Sample in william
+	res/menu:
+		跟集成的actionbar有关系用来布局在actionbar上的功能按键的 xml文件
+		anctionbar在屏幕的上方,典型的action按键有 返回键, 搜索键, 其他功能按键下拉列表
+	project树java/com.example.xxx/放置 activity 的地方:
+		
+activity 的概念:
+	三个状态: 
+		Resumed(活跃状态,正在显示,用户可交互操作), 
+		Paused(被暂时阻塞,什么都不干一般表现屏幕上被弹窗activity遮蔽着其中部分,弹窗activity处于REsumed状态,)
+		Stoped(完全不可见,处于后台,也是被阻塞着,什么都不干)
+	状态的变换:
+		oncreate()->onstart()->onResume()          onPause()	     onStop()        onDestroy()
+	打开app ---------------------------------->Resumed ---------> Paused -------> Stoped ----------->已完全关闭
+						     ^	^		|		|			
+						     |	|  onResume()	|		|
+						     |	|_______________|		|
+						     |__________________________________|
+
+							onResume()<-onRestart()
+		一旦onCreate 操作完成，系统会迅速调用onStart() 与onResume()方法。
+		我们的activity不会在Created或者Started状态停留。
+		技术上来说, activity在onStart()被调用后开始被用户可见，
+		但是 onResume()会迅速被执行使得activity停留在Resumed状态，
+		直到一些因素发生变化才会改变这个状态。例如接收到一个来电，用户切换到另外一个activity，或者是设备屏幕关闭。
+
+
+重点实践
+新建一个 activity:
+	在activity布局里添加一个 button 子视图, 且android:onClick="nac"
+	在java/com.example.xxx/MainActivity: 主activity类上添加一个函数:
+		import android.content.Intent;
+		public class MainActivity extends AppCompatActivity {...
+		    public static String EXTRA_MESSAGE;		//设置一个信号标记
+		    public void nac(View view){
+		        //new activity
+		        Intent in1 = new Intent(this,SecondActivity.class); 	//新建一个信号
+		        TextView Tx1 =(TextView) findViewById(R.id.app_title);	//寻找id为app_title 的TextView 子视图,并为其新建一个类对象
+		        String mes1 = Tx1.getText().toString();	//获取这个TextView 预置的 Text内容
+		        in1.putExtra(EXTRA_MESSAGE,mes1);	//添加信号内容
+		        startActivity(in1);	//启动一个 activity
+		    }
+		...
+		}
+	在project树java/com.example.xxx/右键->new->Activity->Basic activity新建一个activity
+		Activity Name : SecondActivity
+		Layout Name : activity_second
+		Title : NO2
+		Hierarchiral Parent :com.example.xxx.my1,MainActivity	//设置从属的父activity,从属关系与导航有关!!
+		finish
+	在manifests/AndroidManifest.xml可以查看得到新的activity的相关部署配置
+		如果之前的 Hierarchiral Parent 没有设置,也可以在这里补充
+	        <activity
+	            android:name=".SecondActivity"
+	            android:label="@string/title_activity_second"
+	            android:theme="@style/AppTheme.NoActionBar"
+	            android:parentActivityName=".MainActivity">
+	            <meta-data
+	                android:name="android.support.PARENT_ACTIVITY"
+	                android:value=".MainActivity"/>
+	        </activity>
+	修改java/com.example.xxx/SecondActivity:
+		import android.support.constraint.ConstraintLayout;		//需要用到这个 layout类
+		public class SecondActivity extends AppCompatActivity {
+		    ...
+		    @Override
+		    protected void onCreate(Bundle savedInstanceState) {
+			....
+		        //william
+		        Intent in2 = getIntent();	//获取信号,
+		        String mes2 = in2.getStringExtra(MainActivity.EXTRA_MESSAGE);//筛选信号,注意这个要在onCreate里执行,不能在之外执行
+		        TextView tx2 = new TextView(this);
+		        tx2.setTextSize(90);
+		        tx2.setText(mes2);
+		        ConstraintLayout lay2 = (ConstraintLayout) findViewById(R.id.include);//找到 id为include 的ConstraintLayout
+		        lay2.addView(tx2); 	//给这个layout里额外添加一个TextView对象
+		        TextView mes1 = (TextView) findViewById(R.id.textView3);	//找到id为textView3 的TextView
+		        mes1.setText("i love bilibili");	//改变他的text内容为 i love bilibili
+		    }
+		}
+	这时,我们更要注意对应的 res/layout中的 activity_second.xml
+		<?xml version="1.0" encoding="utf-8"?>
+		<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		    xmlns:app="http://schemas.android.com/apk/res-auto"
+		    xmlns:tools="http://schemas.android.com/tools"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    tools:context="com.example.kingders.my1.SecondActivity">
+		    ...
+		    <include
+		        android:id="@+id/include"
+		        layout="@layout/content_second"		//这个内嵌include 使用的布局content_second.xml
+		        android:layout_height="162dp"
+		        tools:layout_editor_absoluteY="405dp" />
+		    ....
+		</android.support.design.widget.CoordinatorLayout>
+		其中又内嵌了一个 content_second.xml 布局:
+		<?xml version="1.0" encoding="utf-8"?>
+		<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		    xmlns:app="http://schemas.android.com/apk/res-auto"
+		    xmlns:tools="http://schemas.android.com/tools"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+		    tools:context="com.example.kingders.my1.SecondActivity"
+		    tools:layout_editor_absoluteY="81dp"
+		    tools:showIn="@layout/activity_second">
+		    ...
+		    <TextView
+		        android:id="@+id/textView3"
+		        android:layout_width="162dp"
+		        android:layout_height="61dp"
+		        android:text="TextView"
+		        tools:layout_editor_absoluteX="111dp"
+		        tools:layout_editor_absoluteY="212dp" />
+		    ...
+		</android.support.constraint.ConstraintLayout>
+	对比,我们寻找 对象的过程,
+		TextView mes1 = (TextView) findViewById(R.id.textView3);
+		ConstraintLayout lay2 = (ConstraintLayout) findViewById(R.id.include);
+		发现,布局layout的id 和 子视图例如TextView的id 定义的位置不一样
+
+添加actionbar:(android4.0以上的方法)		
+	修改res/menu/menu_main.xml:
+		<menu ....>
+		    <item				//添加搜索按键
+		        android:id="@+id/ac_search"
+		        android:icon="@drawable/ic_action_search"	//按键图标ic_action_search.png放到drawable文件夹
+		        android:title="@string/action_search"
+		        app:showAsAction="ifRoom"	//显示在actionabar上
+		            />
+		    <item
+		        android:id="@+id/action_settings"
+		        android:orderInCategory="100"
+		        android:title="@string/action_settings"
+		        app:showAsAction="never" />	//不显示在actionbar,集成到下拉按键列表
+		</menu>
+	修改java/com.example.xxx/SecondActivity 和 MainActivity,显示按键到actionbar,并添加 menu按键事件
+		    @Override
+		    public boolean onCreateOptionsMenu(Menu menu) {		//添加显示
+		        // Inflate the menu; this adds items to the action bar if it is present.
+		        getMenuInflater().inflate(R.menu.menu_main, menu);
+		        return true;
+		    }	
+		    @Override
+		    public boolean onOptionsItemSelected(MenuItem item) {	//按键事件
+		        // Handle action bar item clicks here. The action bar will
+		        // automatically handle clicks on the Home/Up button, so long
+		        // as you specify a parent activity in AndroidManifest.xml.
+		        int id = item.getItemId();
+		
+		        switch(item.getItemId()) {
+		            case R.id.ac_search:
+		                //openSearch();
+		                return true;
+		            case R.id.action_settings:
+		                return true;
+		            default:
+		                return super.onOptionsItemSelected(item);
+		        }
+		    }
+	由于 SecondActivity 和 MainActivity 有从属关系,在SecondActivity的 onCreate()添加:
+	        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		即实现了SecondActivity actionbar 添加返回键,返回到上级 activity,即 MainActivity
+
+	
+
+
+ 
+????????????????????
 
 
 
