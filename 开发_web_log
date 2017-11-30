@@ -6333,12 +6333,6 @@ ubuntu14.04 android_studio
 
 20171114
 android 软件框架:
-	activity 是软件中独立的工作界面, activity 有 pause,resume,stop 3状态,
-	同app activity间的数据交互用 explict intent 不同app activity间数据交互用 impiment intent
-	fragment 是工作界面上显示组件群,
-	音频:通道(媒体,通话,通知),  音频焦点(app播放音频时,需要获得音频焦点,获得播放优先权)
-	uri!!
-
 	manifest/Androidmanifest.xml (软件的综合配置文档)
 	        <activity
 	            android:name=".MainActivity"
@@ -6392,7 +6386,367 @@ activity 的概念:
 		技术上来说, activity在onStart()被调用后开始被用户可见，
 		但是 onResume()会迅速被执行使得activity停留在Resumed状态，
 		直到一些因素发生变化才会改变这个状态。例如接收到一个来电，用户切换到另外一个activity，或者是设备屏幕关闭。
+		重构的onCreate里 先执行的 super.onCreate()先执行父类的oncreate初始化.
+		onDestroy 一般不用重构,
+		但当onCreate时创建了后台线程,或者其他出现内存泄漏的可以问题时,就要自己重构清理
+		有几个场景中，Activity是由于正常的程序行为而被Destory的。
+		例如当用户点击返回按钮或者是Activity通过调用finish()来发出停止信号。
+		系统也有可能会在Activity处于stop状态且长时间不被使用，
+		或者是在前台activity需要更多系统资源的时关闭后台进程，以图获取更多的内存。
+		当Activity是因为用户点击Back按钮或者是activity通过调用finish()结束自己时，
+		系统就丢失了对Activity实例的引用，因为这一行为意味着不再需要这个activity了。
+		然而，如果因为系统资源紧张而导致Activity的Destory， 
+		系统会在用户回到这个Activity时有这个Activity存在过的记录，
+		系统会使用那些保存的记录数据（描述了当Activity被Destory时的状态）来重新创建一个新的Activity实例。
+		那些被系统用来恢复之前状态而保存的数据被叫做 "instance state" ，
+		它是一些存放在Bundle对象中的key-value pairs。(请注意这里的描述，这对理解onSaveInstanceState执行的时刻很重要)
+	(保存状态信息)onSaveInstanceState:
+		当activity开始Stop，系统会调用 onSaveInstanceState() ，
+		Activity可以用键值对的集合来保存状态信息。这个方法会默认保存Activity视图的状态信息，
+		如在 EditText 组件中的文本或 ListView 的滑动位置。
+		为了给Activity保存额外的状态信息，你必须实现onSaveInstanceState() 并增加key-value pairs到 Bundle 对象中，
+		例如：
+			static final String STATE_SCORE = "playerScore";
+			static final String STATE_LEVEL = "playerLevel";
+			...
+			@Override	
+			public void onSaveInstanceState(Bundle savedInstanceState) {	//重构onSaveInstanceState
+			    // Save the user's current game state
+			    savedInstanceState.putInt(STATE_SCORE, mCurrentScore);	//添加额外要保存的信息
+			    savedInstanceState.putInt(STATE_LEVEL, mCurrentLevel);
+			    ...	
+			    // Always call the superclass so it can save the view hierarchy state
+			    super.onSaveInstanceState(savedInstanceState);	//执行父类onSaveInstanceState函数实现保存
+			}
+	恢复Activity状态
+		当Activity从Destory中重建，我们可以从系统传递的Activity的Bundle中恢复保存的状态。 
+		onCreate() 与 onRestoreInstanceState() 回调方法都接收到了同样的Bundle，里面包含了同样的实例状态信息。
+		由于 onCreate() 方法会在第一次创建新的Activity实例与重新创建之前被Destory的实例时都被调用，
+		我们必须在尝试读取 Bundle 对象前检测它是否为null。
+		如果它为null，系统则是创建一个新的Activity实例，而不是恢复之前被Destory的Activity。
+		下面是一个示例：演示在onCreate方法里面恢复一些数据：
 
+			@Override
+			protected void onCreate(Bundle savedInstanceState) {
+			    super.onCreate(savedInstanceState); // Always call the superclass first
+			
+			    // Check whether we're recreating a previously destroyed instance
+			    if (savedInstanceState != null) {
+			        // Restore value of members from saved state
+			        mCurrentScore = savedInstanceState.getInt(STATE_SCORE);
+			        mCurrentLevel = savedInstanceState.getInt(STATE_LEVEL);
+			    } else {
+			        // Probably initialize members with default values for a new instance
+			    }
+			    ...
+			}			
+		我们也可以选择实现 onRestoreInstanceState() ，而不是在onCreate方法里面恢复数据。 
+		onRestoreInstanceState()方法会在 onStart() 方法之后执行.
+		系统仅仅会在存在需要恢复的状态信息时才会调用 onRestoreInstanceState() ，因此不需要检查 Bundle 是否为null。
+			public void onRestoreInstanceState(Bundle savedInstanceState) {
+			    // Always call the superclass so it can restore the view hierarchy
+			    super.onRestoreInstanceState(savedInstanceState);			
+			    // Restore state members from saved instance
+			    mCurrentScore = savedInstanceState.getInt(STATE_SCORE);
+			    mCurrentLevel = savedInstanceState.getInt(STATE_LEVEL);
+			}
+Fragment 概念:
+	内容组合块,一个activity上可以加入多个相互独立的内容组合块,各有自己的 UI布局, 
+	每个fragment 都对应自己的 .java 和 .xml,
+	把 fragment 放入activity,
+		第一种方法是在activity的xml 里加入 <fragment...../> 字节点,并不需要修改 activity.java
+		第二种方法是在activity的xml建立有id号标记的layout,然后在activity.java里给指定layout导入fragment
+同一个app中,的数据交互 (preference文件)
+	打开一个仅当前activity可访问的preference文件,没有会自动新建一个:
+		SharedPreferences spref = getPreferences(MODE_PRIVATE);	
+	打开一个同app里,所有activity都可访问的preference文件,没有会自动建一个
+		//所有activity都可访问的preference文件可以很多个,所以要设置KEY标记文件
+		public static final String KEY = "com.my.package.app";
+		//打开这个指定 KEY 值的 preference文件,没有看就自动建一个
+		SharedPreferences spref = getApplication().getSharedPreference(KEY, Context.MODE_PRIVATE); 
+	读写 preference:
+		//把打开的 preference 建立一个 editor对象
+		SharedPreferences.Editor editor = spref.edit();
+		//刷写请求
+		editor.clear();		//清空 preference 文件内容 
+		editor.putBoolean("KEY_BOOLxx", true);	//写入boolean数据
+		editor.putFloat("KEY_FLOATxx", 18);	//写入float数据
+		editor.putLong("KEY_LONGxx", 100);	//写入long数据
+		editor.putString("KEY_STRINGxx", "Android 開發"); //写入string数据
+		HashSet<String> hs = new HashSet<String>();	//写入组合数据
+		hs.add("一月"); hs.add("二月");
+		editor.putStringSet("KEY_STR_SET", hs);
+		editor.remove("KEY_STRINGxx");		//删除 key值为KEY_STRINGxx 的数据
+		//提交请求刷写 preference
+		editor.apply();
+		//提交请求刷写 preference,保留edtior对象,但释放其他资源,表示完成对preference的写操作
+		editor.commit();
+		//读取操作(不用透过 editor 对象实现)
+		boolean booValue = spref.getBoolean("KEY_BOOL", true);
+		float floatValue = spref.getFloat("KEY_FLOAT", 0);
+		long longValue = spref.getLong("KEY_LONG", 0);
+		String strValue = spref.getString("KEY_STRING", null);
+		HashSet<String> hs = (HashSet<String>) spref.getStringSet("KEY_STR_SET", null);
+		boolean exists = spref.contains("KEY_STRING")
+文件数据存储:
+	Internal storage:
+	        总是可用的
+	        这里的文件默认只能被我们的app所访问。
+	        当用户卸载app的时候，系统会把internal内该app相关的文件都清除干净。
+	        Internal是我们在想确保不被用户与其他app所访问的最佳存储区域。
+	External storage:
+	        并不总是可用的，因为用户有时会通过USB存储模式挂载外部存储器，当取下挂载的这部分后，就无法对其进行访问了。
+	        是大家都可以访问的，因此保存在这里的文件可能被其他程序访问。
+	        当用户卸载我们的app时，系统仅仅会删除external根目录（getExternalFilesDir()）下的相关文件。
+	        External是在不需要严格的访问权限并且希望这些文件能够被其他app所共享或者是允许用户通过电脑访问时的最佳存储区域。
+		Public files :
+			这些文件对与用户与其他app来说是public的，当用户卸载我们的app时，这些文件应该保留。
+			例如，那些被我们的app拍摄的图片或者下载的文件。
+		Private files: 
+			这些文件完全被我们的app所私有，它们应该在app被卸载时删除。尽管由于存储在external storage，
+			那些文件从技术上而言可以被用户与其他app所访问，但实际上那些文件对于其他app没有任何意义。
+			因此，当用户卸载我们的app时，系统会删除其下的private目录。例如，那些被我们的app下载的缓存文件。
+    	app是默认被安装到internal storage的，
+		可以通过在程序的manifest文件中声明android:installLocation 属性来指定程序安装到external storage。
+		更多安装信息见App Install Location。
+	External storage 读写权限声明:
+		<manifest ...>
+		    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+		    ...
+		</manifest>
+		允许写权限,也就默许了读权限
+	关于Internal目录里的文件操作的一些重点函数:
+		//新建一个文件,getFilesDir()返回一个File，代表了我们app的internal目录
+		File file = new File(context.getFilesDir(), filename);	
+		//执行openFileOutput() 打开internal目录的filename文件,
+	  	outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
+	  	outputStream.write(string.getBytes());
+	  	outputStream.close();
+		//打开一个缓存文件
+		file = File.createTempFile(fileName, null, context.getCacheDir());
+	在External目录里的文件操作重点:
+		//检测权限,是否可读
+		 /* Checks if external storage is available for read and write */
+		public boolean isExternalStorageWritable() {
+		    String state = Environment.getExternalStorageState();
+		    if (Environment.MEDIA_MOUNTED.equals(state)) {
+		        return true;
+		    }
+		    return false;
+		}
+		/* Checks if external storage is available to at least read */
+		public boolean isExternalStorageReadable() {
+		    String state = Environment.getExternalStorageState();
+		    if (Environment.MEDIA_MOUNTED.equals(state) ||
+		        Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+		        return true;
+		    }
+		    return false;
+		}
+		//想将文件以public形式保存在external storage中，用getExternalStoragePublicDirectory()获取一个 File 对象
+		File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), albumName);
+		//想将文件以private形式保存在external storage中，用getExternalFilesDir() 获取相应的目录，
+		File file = new File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), albumName);
+			getExternalFilesDir() 方法会创建的目录会在app被卸载时被系统删除。
+			如果我们的文件想在app被删除时仍然保留，请使用getExternalStoragePublicDirectory().
+			无论是使用 getExternalStoragePublicDirectory() 来存储可以共享的文件，
+			还是使用 getExternalFilesDir() 来储存那些对于我们的app来说是私有的文件，
+			有一点很重要，要使用那些类似DIRECTORY_PICTURES 的API的常量。那些目录类型参数可以确保那些文件被系统正确的对待。
+			例如，那些以DIRECTORY_RINGTONES 类型保存的文件就会被系统的media scanner认为是ringtone而不是音乐。
+	查询剩余空间: 
+		getFreeSpace() or getTotalSpace()
+	删除文件:
+		myFile.delete();
+		如果文件是保存在internal storage，我们可以通过Context来访问并通过执行deleteFile()进行删除
+		myContext.deleteFile(fileName);
+数据库操作:
+	这是在设备本身建立访问数据库,不太常用,暂时不看
+app间交互!!!(intent概念)
+	Intent() 的参数有多个种类:
+		没有参数的;
+		Intent类对象;
+		string变量;
+		string变量,URI变量;	(唤醒其他app执行,属于 implicit intent )
+		Context packetContext,Class; (传递给同app,别的activity执行,属于explicit intent Context packetContext填this !! )
+		sting变量,URI变量,Context packetContext,Class;
+	不论是打开别的app,还是app自己的其他activity,建立的intent 最终通过 startActivity 发给系统来实现!!
+	也有Intent交互是需要得到result的,这时用 startActivityForResult(xxIntent, PICK_CONTACT_REQUEST);
+	得到result后的处理一般这样子:
+		@Override
+		protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		    // Check which request we're responding to
+		    if (requestCode == PICK_CONTACT_REQUEST) {	//PICK_CONTACT_REQUEST 请求标记
+		        // Make sure the request was successful
+		        if (resultCode == RESULT_OK) {		//RESULT_OK 成功得到result
+		            // The user picked a contact.
+		            // The Intent's data Uri identifies which contact was selected.
+		
+		            // Do something with the contact here (bigger example below)
+		        }
+		    }
+		}
+	一个app 如果要响应Intent交互的,需要在manifest文件中的<activity>标签下添加<intent-filter>的属性,例如:
+		<activity android:name="ShareActivity">
+		    <!-- filter for sending text; accepts SENDTO action with sms URI schemes -->
+		    <intent-filter>
+		        <action android:name="android.intent.action.SENDTO"/>	   //app会响应的对应intent的信号
+		        <category android:name="android.intent.category.DEFAULT"/> //所有implicit intents都默认是CATEGORY_DEFAULT 类型的
+		        <data android:scheme="sms" />	//intent传来的数据
+		        <data android:scheme="smsto" />	//intent传来的数据
+		    </intent-filter>
+		    <!-- filter for sending text or images; accepts SEND action and text or image data -->
+		    <intent-filter>
+		        <action android:name="android.intent.action.SEND"/>
+		        <category android:name="android.intent.category.DEFAULT"/>
+		        <data android:mimeType="image/*"/>
+		        <data android:mimeType="text/plain"/>
+		    </intent-filter>
+		</activity>
+	响应了intent的app这样子取得交互信息
+		Intent intent = getIntent();
+		Uri data = intent.getData();
+	有些响应了intent的app还要返回result,返回result的一般操作是建立另一个intent发出
+		Intent result = new Intent("com.example.RESULT_ACTION", Uri.parse("content://result_uri");
+		setResult(Activity.RESULT_OK, result);
+		finish();	//主动结束app 或者activity
+网络操作
+	manifest 文件中添加以下权限：
+		<uses-permission android:name="android.permission.INTERNET" />	//允许应用程序打开网络套接字
+		<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />	//允许应用程序访问网络连接信息
+	ConnectivityManager：它会回答关于网络连接的查询结果，并在网络连接改变时通知应用程序。
+	NetworkInfo：描述一个给定类型（就本节而言是移动网络或 Wi-Fi）的网络接口状态。
+	以下片段检查了 wifi 和 移动网络的连接情况
+		private static final String DEBUG_TAG = "NetworkStatusExample";
+		...
+		ConnectivityManager connMgr = (ConnectivityManager)
+		        getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		boolean isWifiConn = networkInfo.isConnected();
+		networkInfo = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		boolean isMobileConn = networkInfo.isConnected();
+		Log.d(DEBUG_TAG, "Wifi connected: " + isWifiConn);
+		Log.d(DEBUG_TAG, "Mobile connected: " + isMobileConn); 
+	一个更简洁的检查网络是否可用的示例如下。
+		getActiveNetworkInfo() 方法返回一个 NetworkInfo 实例，它表示可以找到的第一个已连接的网络接口，
+		如果返回 null，则表示没有已连接的网络接口(意味着网络连接不可用)：
+		public void myClickHandler(View view) {
+		    ...
+		    ConnectivityManager connMgr = (ConnectivityManager)
+		        getSystemService(Context.CONNECTIVITY_SERVICE);
+		    NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();	//获取网络情况
+		    if (networkInfo != null && networkInfo.isConnected()) {	//检查网络是否连接
+		        // fetch data
+		    } else {
+		        // display error
+		    }
+		    ...
+		}
+	一个单独的线程中执行网络操作例子:
+		public class HttpExampleActivity extends Activity {
+		    private static final String DEBUG_TAG = "HttpExample";
+		    private EditText urlText;
+		    private TextView textView;	//对 class HttpExampleActivity 全体可视的类对象!!
+		    @Override
+		    public void onCreate(Bundle savedInstanceState) {
+		        super.onCreate(savedInstanceState);
+		        setContentView(R.layout.main);
+		        urlText = (EditText) findViewById(R.id.myUrl);
+		        textView = (TextView) findViewById(R.id.myText);
+		    }
+		    // 按键处理函数,会触发一个线程 AsyncTask(异步任务)
+		    public void myClickHandler(View view) {
+		        String stringUrl = urlText.getText().toString();  // 从 uriText 文本框中 获取填写的 URL
+		        ConnectivityManager connMgr = (ConnectivityManager)
+		            getSystemService(Context.CONNECTIVITY_SERVICE);
+		        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+		        if (networkInfo != null && networkInfo.isConnected()) {	//检查网络连接
+		            new DownloadWebpageText().execute(stringUrl);	//传递url 执行下载线程
+		        } else {
+		            textView.setText("No network connection available.");
+		        }
+		    }
+		     // Uses AsyncTask to create a task away from the main UI thread. This task takes a
+		     // URL string and uses it to create an HttpUrlConnection. Once the connection
+		     // has been established, the AsyncTask downloads the contents of the webpage as
+		     // an InputStream. Finally, the InputStream is converted into a string, which is
+		     // displayed in the UI by the AsyncTask's onPostExecute method.
+		     private class DownloadWebpageText extends AsyncTask {	//下载线程
+		        @Override
+		        protected String doInBackground(String... urls) {
+		            // params comes from the execute() call: params[0] is the url.
+		            try {
+		                return downloadUrl(urls[0]);	//连接url 并执行下载操作!!
+		            } catch (IOException e) {
+		                return "Unable to retrieve web page. URL may be invalid.";
+		            }
+		        }
+		        // onPostExecute displays the results of the AsyncTask.
+		        @Override
+		        protected void onPostExecute(String result) {	//下载完,接收结果字符串并把它显示到 UI textView 上
+		            textView.setText(result);	
+		       }
+		    }
+		    ...
+			// Given a URL, establishes an HttpUrlConnection and retrieves
+			// the web page content as a InputStream, which it returns as
+			// a string.
+		    private String downloadUrl(String myurl) throws IOException {	//下载操作
+		        InputStream is = null;
+			// Only display the first 500 characters of the retrieved
+			// web page content.
+			int len = 500;
+			try {
+			        URL url = new URL(myurl);	//建立URL数据对象
+			        HttpURLConnection conn = (HttpURLConnection) url.openConnection(); //建立http连接请求对象
+			        conn.setReadTimeout(10000 /* milliseconds */);		//设置读取超时
+			        conn.setConnectTimeout(15000 /* milliseconds */);	//设置连接超时
+			        conn.setRequestMethod("GET");				//设置请求类型
+			        conn.setDoInput(true);					//??
+			        // Starts the query
+			        conn.connect();			//开始连接到 URL 地址
+			        int response = conn.getResponseCode();
+			        Log.d(DEBUG_TAG, "The response is: " + response);
+			        is = conn.getInputStream();		//下载获取的 InputStream 数据
+			        // Convert the InputStream into a string
+			        String contentAsString = readIt(is, len);	//把InputStream 数据 转为字符串
+			        return contentAsString;		
+		        // Makes sure that the InputStream is closed after the app is
+		        // finished using it.
+		        } finally {
+			        if (is != null) {
+			            is.close();
+		        	}
+		    	}
+		    }
+		    //把InputStream 数据 转为字符串 的函数
+		    public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
+		        Reader reader = null;
+		        reader = new InputStreamReader(stream, "UTF-8");
+		        char[] buffer = new char[len];
+		        reader.read(buffer);
+		        return new String(buffer);
+		    }
+		    //扩展知识, 假设下载的是图片,显示图片.
+		    public void imageshow( InputStream stream ){
+			Bitmap bitmap = BitmapFactory.decodeStream(stream);
+			ImageView imageView = (ImageView) findViewById(R.id.image_view);
+			imageView.setImageBitmap(bitmap);			
+		    }
+		}
+通知 notification:(讲的好烂,没有例子,不知道怎么理解,特别是,更想知道没有打开app情况下如何出通知的!!)	
+
+用户输入:
+	gestureinput相关
+
+后台,唤醒,闹钟
+	应用打开时,设置的后台,后台,唤醒,闹钟会保存在系统正常工作,即使应用退出了也不影响!!
+多线程:
+	Thread和Runnable只是两个基本的线程类，通过他们能发挥的作用有限，但是他们是强大的Android线程类的基础类，
+	例如Android中的HandlerThread, AsyncTask和IntentService都是以它们为基础。Thread和Runnable同时也是ThreadPoolExecutor类的基础。
+	ThreadPoolExecutor类能自动管理线程和任务队列，甚至可以并行执行多个线程。
+	一个app 有一个UI线程 和多个后台线程, (ui与后台线程交互):
+	这里所谓的交互是 后台把数据准备后,发系统通知,让UI线程通过 Handler,handlerMessage处理
 
 重点实践
 新建一个 activity:
@@ -6422,8 +6776,7 @@ activity 的概念:
 	        <activity
 	            android:name=".SecondActivity"
 	            android:label="@string/title_activity_second"
-	            android:theme="@style/AppTheme.NoActionBar"
-	            android:parentActivityName=".MainActivity">
+	            android:parentActivityName=".MainActivity">		//设置从属的父activity 另一方法
 	            <meta-data
 	                android:name="android.support.PARENT_ACTIVITY"
 	                android:value=".MainActivity"/>
@@ -6531,8 +6884,1208 @@ activity 的概念:
 	由于 SecondActivity 和 MainActivity 有从属关系,在SecondActivity的 onCreate()添加:
 	        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		即实现了SecondActivity actionbar 添加返回键,返回到上级 activity,即 MainActivity
+		前提是public class Secondactivity extends AppCompatActivity	//继承 AppCompatActivity
 
+添加fragment重点:
+	先建立一个例子fragment: 对应xml 和 java
+		// res/layout/fragment_hello.xml:
+			<?xml version="1.0" encoding="utf-8"?>
+			<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			    android:layout_width="match_parent"
+			    android:layout_height="match_parent"
+			    android:orientation="vertical" >
+			
+			    <EditText
+			        android:layout_width="match_parent"
+			        android:layout_height="wrap_content"
+			        android:hint="请输入内容"/>
+			    <RatingBar
+			        android:id="@+id/ratingBar1"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content" />
+			</LinearLayout>
+		// java/com/example/kingders/my1/HelloFragment.java	(这是这个自定义 fragment 的源码)
+			package com.example.kingders.my1;
+			import android.app.Fragment;
+			import android.os.Bundle;
+			import android.view.LayoutInflater;
+			import android.view.View;
+			import android.view.ViewGroup;		
+			public class HelloFragment extends Fragment {		
+			    @Override
+			    public void onCreate(Bundle savedInstanceState) {
+			        super.onCreate(savedInstanceState);
+			    }
+			    @Override
+			    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			        View view = inflater.inflate(R.layout.fragment_hello, null);  
+				// View android.view.LayoutInflater.inflate(int resource, ViewGroup root)
+			        return view;
+			    }
+			    @Override
+			    public void onPause() {
+			        super.onPause();
+			    }
+			}
+	把fragment加入到 activity 里
+		第一种方法:直接在 activity.xml里 加入fragment 节点
+			    <fragment					//加入fragment 节点
+			        android:id="@+id/fragment_hello"	//设置fragment 节点 id
+			        android:name="com.example.kingders.my1.HelloFragment"	//这个 fragment 使用的 源码
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content" />
+			    <fragment					//加入第二个fragment 节点
+			        android:id="@+id/fragment_hello2"	//第二个fragment 节点 id
+			        android:name="com.example.kingders.my1.HelloFragment"	//这个 fragment 使用的 源码
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content" />
+		第二种方法:先在	activity.xml里设定一个 有 id 的 layout
+			    <LinearLayout
+			        android:id="@+id/fragment_hello3"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_weight="1"
+			        android:background="#00FFFF">
+			    </LinearLayout>
+			然后在activity.java 加入插入代码:例如在 onCreate里加入
+			package com.example.kingders.my1;
+			import android.app.Activity;
+			import android.app.FragmentManager;
+			import android.app.FragmentTransaction;
+			import android.os.Bundle;
+			public class thirdActivity extends Activity {
+			    @Override
+			    protected void onCreate(Bundle savedInstanceState) {
+			        super.onCreate(savedInstanceState);
+			        setContentView(R.layout.activity_third);
+				//在 id 为fragment_hello3 的layout里 插入一个 Fragment
+			        FragmentManager fragmentManager =getFragmentManager();
+			        FragmentTransaction fragmentTransaction =fragmentManager.beginTransaction();
+			        HelloFragment helloFragment = new HelloFragment();
+			        fragmentTransaction.add(R.id.fragment_hello3,helloFragment);
+			        fragmentTransaction.commit();
+			    }
+			}
+		更换fragment,建立在第二种方法的基础上.
+		        //在activity.xml上加一个按钮,
+			    <Button
+			        android:id="@+id/changefrag"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:text="changefragment"/>
+			//然后在onCreate()加上这一段
+		        Button button = (Button) findViewById(R.id.changefrag);
+		        button.setOnClickListener(new View.OnClickListener() {
+		            @Override
+		            public void onClick(View v) {
+				//建立一个新FragmentManager对象,不要用原来的,onCreate上建立的,因为区域问题
+		                FragmentManager fragmentManager1 =getFragmentManager();
+		                FragmentTransaction fragmentTransaction1 =fragmentManager1.beginTransaction();
+		                BiliFragment biliFragment = new BiliFragment();
+				//替换fragment
+		                fragmentTransaction1.replace(R.id.fragment_hello3,biliFragment);
+				//回栈
+		                fragmentTransaction1.addToBackStack(null);
+				//提交显示
+		                fragmentTransaction1.commit();
+		            }
+		        });
+XML操作(未实际操作过):
+	一个例子xml
+	<?xml version="1.0" encoding="utf-8"?>
+	<feed xmlns="http://www.w3.org/2005/Atom" xmlns:creativeCommons="http://backend.userland.com/creativeCommonsRssModule" ...">
+	<title type="text">newest questions tagged android - Stack Overflow</title>
+	...
+	    <entry>
+	    ...
+	    </entry>
+	    <entry>
+	        <id>http://stackoverflow.com/q/9439999</id>
+	        <re:rank scheme="http://stackoverflow.com">0</re:rank>
+	        <title type="text">Where is my data file?</title>
+	        <category scheme="http://stackoverflow.com/feeds/tag?tagnames=android&sort=newest/tags" term="android"/>
+	        <category scheme="http://stackoverflow.com/feeds/tag?tagnames=android&sort=newest/tags" term="file"/>
+	        <author>
+	            <name>cliff2310</name>
+	            <uri>http://stackoverflow.com/users/1128925</uri>
+	        </author>
+	        <link rel="alternate" href="http://stackoverflow.com/questions/9439999/where-is-my-data-file" />
+	        <published>2012-02-25T00:30:54Z</published>
+	        <updated>2012-02-25T00:30:54Z</updated>
+	        <summary type="html">
+	            <p>I have an Application that requires a data file...</p>
 	
+	        </summary>
+	    </entry>
+	    <entry>
+	    ...
+	    </entry>
+	...
+	</feed>
+	先实例化一个分析器
+	public List parse(InputStream in) throws XmlPullParserException, IOException {	//in 是网上收到的InputStream数据,
+	    try {										//是关于 一个xml文件 的数据!!
+	        XmlPullParser parser = Xml.newPullParser();
+	        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                parser.setInput(in, null);
+	        parser.nextTag();
+	        return readFeed(parser);	//读取xml数据
+	    } finally {
+	        in.close();
+	    }
+	}
+	读取xml里的数据
+	private static final String ns = null;		//不知道是什么namespace 
+	private List readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
+	    List entries = new ArrayList();		//初始化一个数组
+	    parser.require(XmlPullParser.START_TAG, ns, "feed");	//找到 feed 节点
+	    while (parser.next() != XmlPullParser.END_TAG) {	//parser.next()扒到下一个节点
+	        if (parser.getEventType() != XmlPullParser.START_TAG) {
+	            continue;
+	        }
+	        String name = parser.getName();
+	        // Starts by looking for the entry tag
+	        if (name.equals("entry")) {		//找到 一个/下一个 entry节点
+	            entries.add(readEntry(parser));	//读取这个entry节点的内容,构成一个 entry 类对象,然后放入数组
+	        } else {
+	            skip(parser);
+	        }
+	    }
+	    return entries;
+	}
+	读取节点内容的具体实现
+	public static class Entry {		//节点 entry 类 声明
+	    public final String title;
+	    public final String link;
+	    public final String summary;
+	
+	    private Entry(String title, String summary, String link) {
+	        this.title = title;
+	        this.summary = summary;
+	        this.link = link;
+	    }
+	}
+	//读取entry节点的内容 ,最终构成 entry 类对象
+	private Entry readEntry(XmlPullParser parser) throws XmlPullParserException, IOException { 
+	    parser.require(XmlPullParser.START_TAG, ns, "entry");	
+	    String title = null;
+	    String summary = null;
+	    String link = null;
+	    while (parser.next() != XmlPullParser.END_TAG) {
+	        if (parser.getEventType() != XmlPullParser.START_TAG) {
+	            continue;
+	        }
+	        String name = parser.getName();
+	        if (name.equals("title")) {
+	            title = readTitle(parser);
+	        } else if (name.equals("summary")) {
+	            summary = readSummary(parser);
+	        } else if (name.equals("link")) {
+	            link = readLink(parser);
+	        } else {
+	            skip(parser);
+	        }
+	    }
+	    return new Entry(title, summary, link);
+	}
+	//读取entry节点 的 title节点 内容
+	private String readTitle(XmlPullParser parser) throws IOException, XmlPullParserException {
+	    parser.require(XmlPullParser.START_TAG, ns, "title");
+	    String title = readText(parser);
+	    parser.require(XmlPullParser.END_TAG, ns, "title");
+	    return title;
+	}
+	//读取entry节点 的 link节点 内容
+	private String readLink(XmlPullParser parser) throws IOException, XmlPullParserException {
+	    String link = "";
+	    parser.require(XmlPullParser.START_TAG, ns, "link");
+	    String tag = parser.getName();
+	    String relType = parser.getAttributeValue(null, "rel");
+	    if (tag.equals("link")) {
+	        if (relType.equals("alternate")){
+	            link = parser.getAttributeValue(null, "href");
+	            parser.nextTag();
+	        }
+	    }
+	    parser.require(XmlPullParser.END_TAG, ns, "link");
+	    return link;
+	}
+
+	//读取entry节点 的 summary节点 内容
+	private String readSummary(XmlPullParser parser) throws IOException, XmlPullParserException {
+	    parser.require(XmlPullParser.START_TAG, ns, "summary");
+	    String summary = readText(parser);
+	    parser.require(XmlPullParser.END_TAG, ns, "summary");
+	    return summary;
+	}
+
+	//读取文本内容的的方法
+	private String readText(XmlPullParser parser) throws IOException, XmlPullParserException {
+	    String result = "";
+	    if (parser.next() == XmlPullParser.TEXT) {
+	        result = parser.getText();
+        parser.nextTag();
+		    }
+	    return result;
+	}
+	  ...
+	}
+	//跳过不关心的节点
+	private void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
+	    if (parser.getEventType() != XmlPullParser.START_TAG) {
+	        throw new IllegalStateException();
+	    }
+	    int depth = 1;
+	    while (depth != 0) {
+	        switch (parser.next()) {
+	        case XmlPullParser.END_TAG:
+	            depth--;
+	            break;
+	        case XmlPullParser.START_TAG:
+	            depth++;
+	            break;
+	        }
+	    }
+	}
+分析官方的 threadsample 来认识 多线程处理,后台线程建立!! (android/project/threadsample.zip)
+	移植中遇到的问题google可解决:
+	属于运行在UI线程的有 activity, photofra gment-photoview-phototask-photomanager
+	属于运行在后台线程的有 photodecoderrunnable,photodownloadrunnable
+	首先,photomanager运行在ui线程的一个后台线程管理,他建立了线程池队列,并实现了把任务加入到线程池队列执行的操作!
+		然后整个app只有一个 photomanager类的实例对象,因为类参数几乎都是static 标记,
+		相当于整个app只有一个 后台线程管理器!
+		public class PhotoManager {
+		    private static PhotoManager sInstance = null;
+		    static {
+		        
+		        // The time unit for "keep alive" is in seconds
+		        KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
+		        
+		        // Creates a single static instance of PhotoManager
+		        sInstance = new PhotoManager();
+		    }
+		    /**
+		     * Constructs the work queues and thread pools used to download and decode images.
+		     */
+		    private PhotoManager() {
+		    ...
+		    }
+		}
+		观察 photomanager类声明,但app启动时,会实例化一个photomanager类,这时会执行static{...}的代码
+		然而这 static{...}的代码 又会递归实例化一个新的photomanager类,先称这是第二次实例化
+		第二次实例化,有些不同,并不会再执行一次static{...}的代码,因为第一次已经做了,
+		还有因为photomanager类里很多参数都是static前缀的,第一次实例化时就存在了,
+		第二次实例化,并不会新建一个,而是共用第一次实例化生成的参数对象,
+		然后,第二次实例化继续执行重构的构造函数private PhotoManager(),给各个共用的参数对象初始化赋值!!!
+		完成了第二次实例化,回到第一次实例化!!
+		第一次实例化,又执行了一遍构造函数private PhotoManager(),可以认为又初始化一遍.
+		所以特别注意这种诡异的实例化行为的写法!!
+	每个后台执行的线程 的任务 都是实现 Runnable 接口的类
+		class PhotoDecodeRunnable implements Runnable {
+		...
+		    /*
+		     * 定义要后台线程执行的 这个任务中的代码
+		     */
+		    @Override
+		    public void run() {
+		        // 把当前的线程变成后台执行的线程
+		        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+		        ...
+		        //在PhotoTask实例中存储当前线程状态，
+		        mPhotoTask.setImageDecodeThread(Thread.currentThread());
+		        ...
+			if (Thread.interrupted()) {	//在执行亢长内容前主动检测有没有被中断
+			    return;
+			}
+			...
+			//解码一张bitmap 图片 (CPU-intensive)
+			BitmapFactory.decodeByteArray(
+			        imageBuffer, 0, imageBuffer.length, bitmapOptions);
+			...
+		    }
+		...
+		}
+		run()就是塞给后台线程执行的任务内容,
+		后台线程运行的任务在等待内容,或者没有任务时,会处于等待状态,
+		这时,可以中断这个后台线程释放占用某个cpu直接去干其他事
+		但当后台线程正在运转任务时,ui线程传来的中断信号并不会停止后台线程正在的工作,
+		所以后台线程上执行的任务,要主动检测是否得到中断信号,特别是在进入亢长的操作前先保存状态,检查有没有中断信号
+		这样可以让响应更敏捷
+	继续看phhotomanager后台线程管理细节!
+		public class PhotoManager {
+		    //获取可用的线程数(即有多少个cpu可用)
+		    private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+		    ...
+		    //实例化 PhotoManager 时执行的这个构造函数建立了 一个任务队列, 一个线程池
+		    private PhotoManager() {
+		        ...
+		        // A queue of Runnables 建立了 一个下载任务的队列, 
+		        private final BlockingQueue<Runnable> mDownloadWorkQueue;
+		        ...
+		        // Instantiates the queue of Runnables as a LinkedBlockingQueue 实例化队列
+		        mDownloadWorkQueue = new LinkedBlockingQueue<Runnable>();
+		        ...
+		        // Sets the amount of time an idle thread waits before terminating
+		        private static final int KEEP_ALIVE_TIME = 1;
+		        // Sets the Time Unit to seconds
+		        private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
+		        // Creates a thread pool manager 为下载任务的队列 建立了一个线程池
+		        mDownloadThreadPool = new ThreadPoolExecutor(
+		                NUMBER_OF_CORES,       // Initial pool size
+		                NUMBER_OF_CORES,       // Max pool size
+		                KEEP_ALIVE_TIME,
+		                KEEP_ALIVE_TIME_UNIT,
+		                mDownloadWorkQueue);
+		    }
+		    // Called by the PhotoView to 新建一个下载任务加入到线程池 (去下载一张图片)
+		    static public PhotoTask startDownload(
+		        PhotoView imageView,
+		        boolean cacheFlag) {
+		        ...
+		        // 添加一个 下载任务 到 后台下载线程池,让后台下载线程的run()执行
+		        sInstance.mDownloadThreadPool.execute(downloadTask.getHTTPDownloadRunnable());
+		        ...
+		    }
+	            // Defines a Handler object that's attached to the UI thread (与ui线程交互相关)
+		    // 即这个handler 会由UI线程执行
+	            mHandler = new Handler(Looper.getMainLooper()) {
+	                /*
+	                 * handleMessage() defines the operations to perform when
+	                 * the Handler receives a new Message to process.
+	                 */
+		        @Override
+		        public void handleMessage(Message inputMessage) {
+		            // Gets the image task from the incoming Message object.
+		            PhotoTask photoTask = (PhotoTask) inputMessage.obj;
+		            ...
+		        }
+		    ...
+		    }
+		...
+		}
+		重点关注 Handler 
+		Handler属于Android系统的线程管理框架的一部分。一个Handler对象用于接收消息和执行处理消息的代码。
+		一般情况下，如果你为一个新线程创建了一个Handler，你还需要创建一个Handler，让它与一个已经存在的线程关联，
+		用于这两个线程之间的通信。如果你把一个Handler关联到UI线程，处理消息的代码就会在UI线程中执行。
+		你可以在一个用于创建你的线程池的类的构造方法中实例化一个Handler对象，并把它定义为全局变量，
+		然后通过使用Handler (Looper) 这一构造方法实例化它，用于关联到UI线程。
+		Handler(Looper)这一构造方法需要传入了一个Looper对象，它是Android系统的线程管理框架中的另一部分。
+		当你在一个特定的Looper实例的基础上去实例化一个Handler时，这个Handler与Looper运行在同一个线程里。
+	再讨论 UI线程 与 后台线程的交互!!
+		从源码分析
+		//ui线程
+		photoManager startdownload 开始, 实例化了一个 phototask
+		 一个实例化的 phototask里又实例化了 一个PhotoDecodeRunnable和PhotoDownloadRunnable
+		另外重点的是,phototask类声明了自己是一个接口类, 
+		PhotoDecodeRunnable和PhotoDownloadRunnable 各实例了一个接口对象,可以直接访问phototask实例里的接口函数 !
+		然后的回到 photoManager startdownload,继续,把 phototask.PhotoDownloadRunnable 任务扔到后台下载线程池,
+		//后台下载线程
+		phototask.PhotoDownloadRunnable.run()
+		mPhotoTask是一个接口对象,可直接访问phototask实例的内容!!
+		mPhotoTask.setDownloadThread(Thread.currentThread()); //保存当前所处线程以及相关当前运行状态信息,为中断服务
+			注意, 现在是运行在后台下载线程的任务,却通过接口对象mPhotoTask,使用了在UI线程实例化的phototask实例的函数
+			并且修改了 在UI线程实例化的phototask实例 的mCurrentThread参数对象
+			即 在UI线程实例化的phototask实例 直接被执行在后台下载线程的任务 访问了函数并修改了内容
+		接下来陆续做了一系列工作,也通过接口对象mPhotoTask,访问修改了 phototask实例的其他内容
+		下载完成了,
+		mPhotoTask.setByteBuffer(byteBuffer);	//把下载的原始数据放到了 phototask实例
+		mPhotoTask.handleDownloadState(HTTP_STATE_COMPLETED);
+			调用了phototask.handleDownloadState->phototask.handleState->PhotoManager.handleState
+			辗转把标记递到 实例PhotoManager.handleState处理,然后把PhotoDecodeRunnable扔到后台解码线程池
+			注意,虽然用到了实例PhotoManager的函数,但依然在后台下载线程里执行.
+			这里是在 后台下载线程,把PhotoDecodeRunnable扔到后台解码线程池
+			至此 mPhotoTask.handleDownloadState 才真正结束
+		PhotoDownloadRunnable任务也告一段落!!
+		//后台解码线程
+		phototask.PhotoDecodeRunnable.run()
+		mPhotoTask是一个接口对象,可直接访问phototask实例的内容!!
+		mPhotoTask.setImageDecodeThread(Thread.currentThread());//保存当前所处线程以及相关当前运行状态信息,为中断服务
+		由于这个runnable 和上面谈论的 downloadrunnable 都是那同一个phototask实例里的子实例,
+		所以这里修改的还是同一个 实例phototask 的mCurrentThread参数对象
+		然后也是执行亢长的解码操作,中途也会他也会用过接口对象修改 phototask实例的内容
+		解码完成: 
+		mPhotoTask.setImage(returnBitmap);	//把解码后图片放到了 phototask实例
+                mPhotoTask.handleDecodeState(DECODE_STATE_COMPLETED);
+			调用了phototask.handleDecodeState->phototask.handleState->PhotoManager.handleState
+			辗转把标记递到 实例PhotoManager.handleState处理,
+			把 放在phototask实例上的图片数据 放到一个 LruCache 类实例上去
+			然后, 为 photomanger 上的 Handler实例 获取一个消息 obj = photomanager.Handler.obtainmessage();
+			把消息发到系统上去: obj.sendToTarget();
+			至此 mPhotoTask.handleDecodeState 才真正结束
+		//ui线程
+		android系统收到一个消息,又把它发给了 UI线程中执行的 Photomanager实例中的 Handler 的 handlerMessage处理
+		从收到的 obj中找到了 相对应的那一个 phototask实例,
+		把phototask实例中 缓存的 的图片 直接 放上View显示,
+		(注意,虽然图片也被缓存到 LruCache上,但这里并没有使用Cache上的内容)
+		//最后
+		纵观整个过程,虽然 在UI线程中 实例的photoManager,photoTask的内容和类函数,可以在后台线程中被各种调用
+		后台线程的decode任务 把内容放到 photoTask实例中去,然后给系统发个通知,
+		然后UI线程才把图片显示到显示屏上,
+		后台线程是无法执行 localView.setImageBitmap这样的函数的,所以是后台线程通知UI线程数据已经准备好,让UI线程执行
+后台服务,与多线程同一个例子,
+	上面解析如何建立 后台线程池,把后台任务放进去执行,
+	这里后台服务的做法不一样!!	 		
+	官方例子有内容缺失,先不管
+	一般建立后台service步骤:
+		mainfest 添加例如像以下的内容
+		        <service android:name=".ServiceXXX"	//ServiceXXX指ServiceXXX.class
+		            android:label="@string/app_name">
+		        </service>
+		启动后台的activity代码要添加例如以下内容:
+			Intent i = new Intent(Service_without_UI.this,ServiceXXX.class);
+			startService(i);
+		后台代码像这样(这个后台是播放音乐):
+			public class ServiceXXX extends Service {
+			 MediaPlayer m;
+			 /* 必须重写的IBinder,未知作用!!!
+			  * @see android.app.Service#onBind(android.content.Intent)
+			  */
+			 @Override
+			 public IBinder onBind(Intent arg0) {
+			  // TODO Auto-generated method stub
+			  return null;
+			 }
+
+			 @Override
+			 public void onCreate() {
+			  // TODO Auto-generated method stub
+			  super.onCreate();
+			 }
+
+			 @Override
+			 public void onStart(Intent intent, int startId) {
+			  Toast.makeText(this, "Service start", Toast.LENGTH_SHORT).show();		
+			  if (m!=null) m.stop();
+			  m = MediaPlayer.create(this, R.raw.deal); //raw是放mp3的資料夾,deal是mp3的檔名
+			  m.start();
+			 }
+
+			 @Override
+			 public void onDestroy() {
+			  Toast.makeText(this, "Service stop", Toast.LENGTH_SHORT).show();
+			  m.stop();
+			  m.release();
+			 }
+			}	
+	service返回数据消息的操作,通过广播:
+		在需要接收反馈内容的acticity添加例如以下内容
+		     //声明类实例, 这个类定义内容,可嵌入到自己的activity类里,也可以在外面一个独立.java文件重新定义
+		     private ServiceXXX msgReceiver;  
+		     //动态注册广播接收器  
+		     msgReceiver = new MsgReceiver();  
+		     IntentFilter intentFilter = new IntentFilter();  
+		     intentFilter.addAction("com.example.communication.RECEIVER");  //消息标记
+		     registerReceiver(msgReceiver, intentFilter);  
+		    // 广播接收器  类定义
+		    public class MsgReceiver extends BroadcastReceiver{  
+		  
+		        @Override  
+		        public void onReceive(Context context, Intent intent) {  
+		            //拿到进度，更新UI  
+		            int progress = intent.getIntExtra("progress", 0);  //得到int数据,这里填入参数是 {String:数据名, int数据A}
+			    //int数据A是默认值,万一没有 String:数据名 那么默认就返回这个默认值
+		            mProgressBar.setProgress(progress);  	//更新进度条view
+		        }  
+		    } 
+		修改 serviceXXX.class 添加一些内容:
+		    //建立 Intent
+		    private Intent intent = new Intent("com.example.communication.RECEIVER");  			
+		    //发送Action为com.example.communication.RECEIVER的广播  
+                    intent.putExtra("progress", progress);  //这里填入参数是 {String:数据名, 数据内容}
+                    sendBroadcast(intent);  
+	activity 直接交互 service 的数据的第二种操作,通过binder(这里的建立和执行service与上述的有所不同)
+		//相当复杂,需要实证
+		service 文件加入例如以下内容:
+		    public class MyBinder extends android.os.Binder{	//service建立一个binder,里面是client访问service内容的方法
+		        public void getData(){		//activity 得到 service 内部数据接口
+		            return ServiceXXX.this.data;
+		        }
+		        public void setData(String data){	//activity 修改 service 内部数据接口
+		            ServiceXXX.this.data = data;
+		        }
+		        public MyService getService(){		//返回 binder实例 所在的 service类实例(返回指针)
+		            return ServiceXXX.this;
+		        }
+		    }
+
+		    @Override
+		    public IBinder onBind(Intent intent) {	//必须重写的IBinder 在service实例化一个MyBinder类,并返回
+		        // TODO: Return the communication channel to the service.
+		        System.out.println("ServiceXXX.onBind()");
+		        return new MyBinder();	//返回的实例作为 activity 里 onServiceConnected中的第二个参数
+		    }
+		activity文件添加例如以下内容:
+		    //声明一个 ServiceXXX 对象
+		    private ServiceXXX msgService;  
+		    //绑定Service,并启动
+		    //注意, 一般建立后台service步骤:启动后台的activity代码像这样的:
+		    //	Intent i = new Intent(Service_without_UI.this,ServiceXXX.class);
+		    //	startService(i);
+		    //startService 和 bindService, 区别:startService适合不使用binder交互的情形,
+		    //但是这个通过 binder 交互的 方式 启动后台的方式却是这样的
+		    @Override  
+		    protected void onCreate(Bundle savedInstanceState) { 		
+			    Intent intent = new Intent(Service_without_UI.this,ServiceXXX.class);
+			    bindService(intent, conn, Context.BIND_AUTO_CREATE); 
+		    ...}
+		    //新建一个连接实例
+		    ServiceConnection conn = new ServiceConnection() {  
+		        @Override  
+		        public void onServiceDisconnected(ComponentName name) {  
+		           ...   
+		        }  
+		          
+		        @Override  
+		        public void onServiceConnected(ComponentName name, IBinder binder) {  
+		            //service onBind() 返回一个 MyBinder实例给 binder, 
+			    //通过 MyBinder.getService()的得到 binder 所在 service
+		            msgService = ((ServiceXXX.MyBinder)binder).getService();  
+		              
+		        }  
+		    }; 
+		    //activity 读写 service 内容
+		    func {...
+		        dataxx = msgService.Mybinder.getdata();
+		        msgService.Mybinder.setdata(dataxx);
+		    }
+		这个例子代码乱,有必要记下代码的执行思路:
+			activity启动前,会实例化化这个activity,所以会实例化ServiceConnection conn
+			然后 activity启动,执行oncreate(),会执行bindservice,
+				serviceXXX实例化,肯定会执行 onBind(),最后返回 MyBinder()实例的指针
+				bind后,会唤醒 activity 实例中的ServiceConnection实例conn.onServiceConnected
+				这样,就获得service的指针,并返回到activity里
+			然后 activity所属的UI线程就可以访问 后台线程的 serviceXXXX 的 数据,甚至函数!!
+easytouch分析!!
+	注意app 和 activity 的概念, 一个运行的app会建立多个activity,即使所有activity都关闭,不代表app就已经退出.
+	Activity类中的finish()、onDestory()和System.exit(0) 三者的区别：
+		finish是Activity的类，仅仅针对Activity，当调用finish()时，只是将活动推向后台，
+		并没有立即释放内存，活动的资源并没有被清理；当调用System.exit(0)时，杀死了整个进程，这时候活动所占的资源也会被释放。
+		Activity.finish()
+			Call this when your activity is done and should be closed. 
+			在你的activity动作完成的时候，或者Activity需要关闭的时候，调用此方法。
+			当你调用此方法的时候，系统只是将最上面的Activity移出了栈，并没有及时的调用onDestory（）方法，
+			其占用的资源也没有被及时释放。因为移出了栈，所以当你点击手机上面的“back”按键的时候，也不会找到这个Activity。
+			finish是Activity的类，仅仅针对Activity，当调用finish()时，只是将活动推向后台，
+			并没有立即释放内存，活动的资源并没有被清理；
+		Activity.Onstop()
+			OnStop(){}是指在Activity结束时调用什么东西，可以重写的，这两个完全不一样，简单的说就是finish()时会调用OnStop里的方法
+		Activity.onDestory()
+			the system is temporarily destroying this instance of the activity to save space.
+			系统销毁了这个Activity的实例在内存中占据的空间。
+			在Activity的生命周期中，onDestory()方法是他生命的最后一步，资源空间什么的都没有咯~~。
+			当重新进入此Activity的时候，必须重新创建，执行onCreate()方法。
+		System.exit(0)
+			这玩意是退出整个应用程序的，是针对整个Application的。将整个进程直接KO掉。
+			当调用System.exit(0)时，杀死了整个进程，这时候活动所占的资源也会被释放。
+			使用时，可以写在onDestory()方法内，亦可直接在想退出的地方直接调用：
+			如：System.exit(0); 或 android.os.Process.killProcess(android.os.Process.myPid());
+	后台服务service分析见上面
+	Binder
+		这是一个android ipc ,以client/server的方式实现
+		具体是实现原理不深究,先认识一般是使用方法:
+		1.继承 Binder 使用 例子:
+		    在service类中，创建一个满足以下任一要求的Binder实例：
+		        包含客户端可调用的公共方法
+		        返回当前Service实例，其中包含客户端可调用的公共方法
+		        返回由当前service承载的其他类的实例，其中包含客户端可调用的公共方法
+			例如:
+			    public class MyBinder extends android.os.Binder{	//service建立一个binder,里面是client访问service内容的方法
+			        public void getData(){		//activity 得到 service 内部数据接口
+			            return ServiceXXX.this.data;
+			        }
+			        public void setData(String data){	//activity 修改 service 内部数据接口
+			            ServiceXXX.this.data = data;
+			        }
+			        public MyService getService(){		//返回当前Service实例的方法
+			            return ServiceXXX.this;
+			        }
+			    }
+		    在service类中onBind()方法中返回这个Binder实例
+			    @Override
+			    public IBinder onBind(Intent intent) {
+			        return new MyBinder();	//返回的实例作为 activity 里 onServiceConnected中的第二个参数
+			    }
+		    在客户端activity中通过onServiceDisconnected()方法接收传过来的Binder实例，
+			    //新建一个连接实例
+			    ServiceConnection conn = new ServiceConnection() {  
+			        @Override  
+			        public void onServiceDisconnected(ComponentName name) {  
+			        }  
+			        @Override  
+			        public void onServiceConnected(ComponentName name, IBinder binder) {  
+			            msgService = ((ServiceXXX.MyBinder)binder).getService();  
+			        }  
+			    }; 
+		    在客户端activity中,bindservice
+			    bindService(intent, conn, Context.BIND_AUTO_CREATE); 
+			    bindservice第一个参数是 intent,用来指定启动那个service,以及传递一些数据
+			    第二个参数是 ServiceConnection,
+			    第三个参数是 flag,
+				通常应该是 BIND_AUTO_CREATE，以便创建尚未激活的服务。 
+				其他可能的值为 BIND_DEBUG_UNBIND 和 BIND_NOT_FOREGROUND，或 0（表示无）。
+		    然后就可以通过binder接口提供的方法进行后续操作,访问service 的内容!!
+		        dataxx = msgService.Mybinder.getdata();
+		        msgService.Mybinder.setdata(dataxx);
+		2,使用message 
+		    在service类中，创建一个满足以下任一要求的 Handler实例：
+			    static final int MSG_SAY_HELLO = 1;
+			    class ServiceHandler extends Handler {
+			        @Override
+			        public void handleMessage(Message msg) {
+			            switch (msg.what) {
+			                case MSG_SAY_HELLO:                    
+			                    Toast.makeText(getApplicationContext(), "hello!", Toast.LENGTH_SHORT).show();
+			                    break;
+			                default:
+			                    super.handleMessage(msg);
+			            }
+			        }
+			    }
+		    在service类中,把这个Handler实例映射到一个消息实例:
+			    //当service收到消息的时候就会自动执行 ServiceHandler().handleMessage内容
+			    final Messenger mMessenger = new Messenger(new ServiceHandler());
+		    在service类中onBind()方法中返回这个Messenger自带的Binder实例
+			    @Override
+			    public IBinder onBind(Intent intent) {
+			        return mMessenger.getBinder();
+			    }
+		    在客户端activity中通过onServiceDisconnected()方法接收传过来的Binder实例，
+			    //新建一个连接实例
+			    private ServiceConnection mConnection = new ServiceConnection() {
+			        public void onServiceConnected(ComponentName className, IBinder service) {	            
+			            mService = new Messenger(service);	//为这个传来的binder在客户端里又新建一个 Messenger实例
+			            mBound = true;
+			        }
+			        public void onServiceDisconnected(ComponentName className) {
+			            mService = null;
+			            mBound = false;
+			        }
+			    };
+		    在客户端activity里 bindserver
+		        Intent intent = new Intent();
+		        intent.setAction("com.lypeer.messenger");
+		        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		    这时,客户端activity发送的message ,会被service收到并处理!!
+		        Message msg = Message.obtain(null, MSG_SAY_HELLO, 0, 0);
+	                mService.send(msg);
+		    完整代码例子:
+			//acctivity.java
+			public class ActivityMessenger extends Activity {
+			
+			    static final int MSG_SAY_HELLO = 1;
+			
+			    Messenger mService = null;
+			    boolean mBound;
+			
+			    private ServiceConnection mConnection = new ServiceConnection() {
+			        public void onServiceConnected(ComponentName className, IBinder service) {
+			            
+			            mService = new Messenger(service);
+			            mBound = true;
+			        }
+			
+			        public void onServiceDisconnected(ComponentName className) {
+			            mService = null;
+			            mBound = false;
+			        }
+			    };
+			   
+			    public void sayHello(View v) {
+			        if (!mBound) return;
+			        
+			        Message msg = Message.obtain(null, MSG_SAY_HELLO, 0, 0);
+			        try {
+			            mService.send(msg);
+			        } catch (RemoteException e) {
+			            e.printStackTrace();
+			        }
+			    }
+			
+			    @Override
+			    protected void onCreate(Bundle savedInstanceState) {
+			        super.onCreate(savedInstanceState);
+			        setContentView(R.layout.activity_main);
+			    }
+		
+			    @Override
+			    protected void onStart() {
+			        super.onStart();
+			        
+			        Intent intent = new Intent();
+			        intent.setAction("com.lypeer.messenger");
+			        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+			    }
+			
+			    @Override
+			    protected void onStop() {
+			        super.onStop();
+			        
+			        if (mBound) {
+			            unbindService(mConnection);
+			            mBound = false;
+			        }
+			    }
+			}
+
+			//Messenger.java
+			public class MessengerServiceDemo extends Service {
+			
+			    static final int MSG_SAY_HELLO = 1;
+			
+			    class ServiceHandler extends Handler {
+			        @Override
+			        public void handleMessage(Message msg) {
+			            switch (msg.what) {
+			                case MSG_SAY_HELLO:
+			                    
+			                    Toast.makeText(getApplicationContext(), "hello!", Toast.LENGTH_SHORT).show();
+			                    break;
+			                default:
+			                    super.handleMessage(msg);
+			            }
+			        }
+			    }
+			
+			    final Messenger mMessenger = new Messenger(new ServiceHandler());
+			
+			    @Nullable
+			    @Override
+			    public IBinder onBind(Intent intent) {
+			        Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_SHORT).show();
+			        
+			        return mMessenger.getBinder();
+			    }
+			}
+		3,通过 AIDL:(安卓接口定义语言)	
+	toast
+		其实就是弹窗消息,先不深究
+	context
+		加载资源、启动一个新的Activity、获取系统服务、获取内部文件（夹）路径、创建View操作时等都需要Context的参与
+		是一个抽象类,Activity、Service、Application都是继承自ContextWrapper，
+		而ContextWrapper内部会包含一个base context，由这个base context去实现了绝大多数的方法
+		BroadcastReceiver ContentProvider 并不继承context类,他们持有的context 是其他地方传过去
+		在需要Context的时候，如果是在Activity中，大多直接传个this，
+		当在匿名内部类的时候，因为this不能用，需要写XXXActivity.this，很多人偷懒，直接就来个getApplicationContext。
+		但XXXActivity.this和getApplicationContextu有区别
+		XXXActivity和getApplicationContext返回的肯定不是一个对象，一个是当前Activity的实例，一个是项目的Application的实例。
+		既然区别这么明显，那么各自的使用场景肯定不同，乱使用可能会带来一些问题。
+		例如以下一个例子
+			import android.content.Context;  
+			public class CustomManager  	
+			{  
+			    private static CustomManager sInstance;  	//sInstance是一个static量
+			    private Context mContext;  
+			    private CustomManager(Context context)  
+			    {  
+			        this.mContext = context;  
+			    }  	  
+			    public static synchronized CustomManager getInstance(Context context)  
+			    {  
+			        if (sInstance == null)  
+			        {  
+			            sInstance = new CustomManager(context);  
+			        }  
+			        return sInstance;  
+			    }  	      
+			    //some methods   
+			    private void someOtherMethodNeedContext()  
+			    {  ...	          
+			    }  
+			}	
+			在XXXactivity里 调用 CustomManager.getInstance(this)时,
+			我们传递了 XXXactivity的实例A 的context 给 CustomManager的一个实例sInstance 的 mContext对象
+			因为 sInstance是一个static量, 即一直存在与 application同生命存在
+			就是说当 XXXactivity的实例A 需要 destory 的时候,
+			由于XXXactivity的实例A 的context 被实例sInstance 的 mContext对象持有,导致无法释放,
+			导致整个 XXXactivity的实例A所占空间没有被释放
+			当 XXXactivity的实例B 调用 CustomManager.getInstance(this)时,
+			sInstance 的 mContext对象持有XXXactivity的实例B 的context
+			而 XXXactivity的实例A所占空间 会变成占据内存的死块一直存在 (这就是内存泄漏)
+			正确的做法是:
+				sInstance = new CustomManager(context.getApplicationContext());
+			这样的的话,在XXXactivity里 调用 CustomManager.getInstance(this)时,
+			我们传递了 XXXactivity的实例A 的context 给 CustomManager的一个实例sInstance,
+			实例sInstance 会从 XXXactivity的实例A 的context 找到 application的context,然后赋给 mContext
+			即实例sInstance 的 mContext对象 引用了 application的context,
+			appliacation退出的时候,先释放实例sInstance,再释放自己,
+			这样就不存在 sInstance 的 mContext对象持有application的context,而导致无法释放造成内存泄漏
+		需要获取 context 的应用行为有:
+		show a dialog,start an activity,layout inflation,...
+		例如 建立一个新activity的应用行为 最好是获取当前 activity实例的content作为引用
+		一些补充:
+		getBaseContext() 返回的是 contexttimpl类实例
+			Context类本身是一个纯abstract类，它有两个具体的实现子类：ContextImpl和ContextWrapper。
+			其中ContextWrapper类，如其名所言，这只是一个包装而已，ContextWrapper构造函数中必须包含一个真正的Context引用，
+			同时ContextWrapper中提供了attachBaseContext（）用于给ContextWrapper对象中指定真正的Context对象，
+			调用ContextWrapper的方法都会被转向其所包含的真正的Context对象。ContextThemeWrapper类，
+			如其名所言，其内部包含了与主题（Theme）相关的接口，
+			这里所说的主题就是指在AndroidManifest.xml中通过android：theme为Application元素或者Activity元素指定的主题。
+			当然，只有Activity才需要主题，Service是不需要主题的，因为Service是没有界面的后台场景，
+			所以Service直接继承于ContextWrapper，Application同理。
+			而ContextImpl类则真正实现了Context中的所以函数，应用程序中所调用的各种Context类的方法，其实现均来自于该类。
+			一句话总结：Context的两个子类分工明确，其中ContextImpl是Context的具体实现类，ContextWrapper是Context的包装类。
+			Activity，Application，Service虽都继承自ContextWrapper（Activity继承自ContextWrapper的子类ContextThemeWrapper），
+			但它们初始化的过程中都会创建ContextImpl对象，由ContextImpl实现Context中的方法。。
+		getApplication()和getApplicationContext()区别:
+			getApplication()只能在activity/service类函数调用
+			getApplicationContext()则可以在其他例如上述例子,例如 BoardcastReceiver
+	popupwindow
+		5.1以后,系统自带的似乎不能显示在桌面之上,未知问题出在哪.
+		在5.1设备后工作出错,不提倡使用!! 建议通过 windowmanager addview实现
+	Intent:
+		(意图)有隐形意图implicit和显性意图explicit两个概念!
+		它可以通过 startActivity 来启动一个活动，
+		broadcastIntent 来发送广播到任何对它感兴趣的广播接受器组件，
+		startService(Intent) 或者bindService(Intent， ServiceConnection, int) 来与后台服务通讯
+		显性意图例子:
+			// 通过指定类名的显式意图,
+			//第一个参数context: FirstActivity.this 表示这个意图来源于 FirstActivity 
+			//的二个参数是 一个activity class,显然这个意图是给 SecondAcitivity 的
+			Intent i = new Intent(FirstActivity.this, SecondAcitivity.class);
+			//传递这个意图给系统,系统根据这个意图直接打开启动 同app 的SecondAcitivity
+			startActivity(i);
+		隐性意图例子1:
+			//第一个参数是标记 android.content.Intent.ACTION_VIEW
+			//第二个参数是数据: Uri.parse("http://www.uprogrammer.cn")
+			Intent i = new Intent(android.content.Intent.ACTION_VIEW, Uri.parse("http://www.uprogrammer.cn"));
+			//传递这个意图给系统,系统会筛选出一堆接受ACTION_VIEW的 activity(不一定是同一个app),
+			//然后在根据后面的 Uri数据选择最合适的 activity启动 
+                	startActivity(i);
+			//就是说 隐式意图之所以是隐式是因为.传递的意图只有标记和数据,要通过标记和数据来筛选出activity来启动!!
+		隐性意图例子2:
+		    app1:
+			//建立一个android.content.Intent.ACTION_VIEW 标记的意图, 
+	                Intent i = new Intent(android.content.Intent.ACTION_VIEW,Uri.parse("http://www.uprogrammer.cn"));
+	                startActivity(i);
+			//建立一个cn.uprogrammer.intentfilter.LAUNCH 标记的意图,(这个标记是自己定义的) 
+	                Intent i = new Intent("cn.uprogrammer.intentfilter.LAUNCH",Uri.parse("http://www.uprogrammer.cn"));
+	                startActivity(i);
+		    app2:
+			//CustomActivity.java
+			import android.app.Activity;
+		        import android.net.Uri;
+		        import android.os.Bundle;
+		        import android.widget.TextView;
+		
+			public class CustomActivity extends Activity {
+			    @Override
+			    public void onCreate(Bundle savedInstanceState) {
+			        super.onCreate(savedInstanceState);
+			        setContentView(R.layout.custom_view);
+			        TextView label = (TextView) findViewById(R.id.show_data);
+			        Uri url = getIntent().getData();
+			        label.setText(url.toString());
+			    }
+			}
+			//AndroidManifest.xml
+			//app要设置相关过滤器</intent-filter> 才可以接收到相关的隐式意图
+		        <activity android:name="cn.uprogrammer.intentfilter.CustomActivity"
+		            android:label="@string/app_name">	
+			        <intent-filter>
+			            <action android:name="android.intent.action.VIEW" />
+			            <action android:name="cn.uprogrammer.intentfilter.LAUNCH" />
+			            <category android:name="android.intent.category.DEFAULT" />
+			            <data android:scheme="http" />
+			        </intent-filter>		
+		        </activity>
+			假设 app1 向系统发送了一个 Intent		
+			app2 的 AndroidManifest.xml中设置了CustomActivity的 intent-filter 表示:
+				当系统收到 android.intent.action.VIEW 时
+				都会初步筛选到 app2.CustomActivity, 和浏览器的activity,和其他合适的activity
+				进一步分析 intent里带有的参数Uri.parse("http://www.uprogrammer.cn"),
+				根据 <data android:scheme="http" /> 进一步筛选出,app2.CustomActivity, 和浏览器的activity
+				然后弹出弹窗让用户选择其中一个 来打开,并传给他Intent!!
+				当系统收到 cn.uprogrammer.intentfilter.LAUNCH 时
+				都会初步只筛选到 app2.CustomActivity,然后直接打开,并传给他Intent!!
+	broadcastReceiver:
+		例子:
+		   //app1建立一个 MyReceiver.java
+			public class MyReceiver extends BroadcastReceiver {
+			    @Override
+			    public void onReceive(Context context, Intent intent) {
+			        Toast.makeText(context, "检测到意图。", Toast.LENGTH_LONG).show();
+			    }
+			}
+		  //app1 的 AndroidManifest.xml 添加注册 receiver
+		        <receiver android:name="MyReceiver">
+		            <intent-filter>
+		                <action android:name="cn.programmer.CUSTOM_INTENT">	//设置意图过滤器
+		                </action>
+		            </intent-filter>		
+		        </receiver>				    
+		  //另一个app2 的activity 发送意图
+			public void broadcastIntent(View view){
+			     Intent intent = new Intent();
+			     intent.setAction("cn.programmer.CUSTOM_INTENT");
+			     sendBroadcast(intent);
+			}
+		 这时,系统接收到一个意图,根据cn.programmer.CUSTOM_INTENT标记筛选到了app1.MyReceiver,然后打开并传递了intrnt
+	contentprovider
+		app1,为其他app可共同访问app1建立的sqlite数据库的数据,所提供的一个接口方法
+		contentprovider是基于 URL 访问的,所以要建立对应的 uri 透过uri访问
+		uri格式例子: content://cn.scu.myprovider/User/7
+			content:// 安卓规定contentprovider使用的标识段
+			cn.scu.myprovider 域名 用来定位要访问的是哪个 contentprovider
+			User  一个对象集合,比如contentprovider映射的 sqlite数据库的 User的这个表单
+			7	表单中 id 为 7 那条数据记录!!!
+		例子:
+		  所有app要访问 app1 contentprovider 自身都应该有一个这样的 常量类 content.java!!!
+			import android.net.Uri;  
+			public class Constant {  
+			    public static final String TABLE_NAME = "user";  
+			    public static final String COLUMN_ID = "_id";  
+			    public static final String COLUMN_NAME = "name";  
+			    public static final String AUTOHORITY = "cn.scu.myprovider";  
+			    public static final int ITEM = 1;  
+			    public static final int ITEM_ID = 2; 
+			    //以下两条与 MIME 相关 
+			    	public static final String CONTENT_TYPE = "vnd.android.cursor.dir/user";  
+			    	public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/user";  
+			    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTOHORITY + "/user");  
+			}  
+			//常量类告诉各个app, 访问 app1 contentprovider 需要用到的一些 句柄常量什么的.
+		  app1 持有 contentprovider需要一个DBHelper接口来操作sqlite数据库,
+			import android.database.sqlite.SQLiteDatabase;
+			import android.database.sqlite.SQLiteOpenHelper;
+			import android.content.Context;  
+			import android.database.SQLException;  
+			  
+			public class DBHelper extends SQLiteOpenHelper {  
+			    private static final String DATABASE_NAME = "finch.db";    
+			    private static final int DATABASE_VERSION = 1;    
+
+			    public DBHelper(Context context) {  
+			        super(context, DATABASE_NAME, null, DATABASE_VERSION);  
+			    } 
+ 	  
+			    @Override  
+			    public void onCreate(SQLiteDatabase db)  throws SQLException {  
+			        //打开数据库,不存在就新建
+			        db.execSQL("CREATE TABLE IF NOT EXISTS "+ Constant.TABLE_NAME + "("+ Constant.COLUMN_ID 
+					+" INTEGER PRIMARY KEY AUTOINCREMENT," + Constant.COLUMN_NAME +" VARCHAR NOT NULL);");  
+			    }  
+			  
+			    @Override  
+			    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)  throws SQLException {  
+			        //更新数据库  
+			        db.execSQL("DROP TABLE IF EXISTS "+ Constant.TABLE_NAME+";");  
+			        onCreate(db);  
+			    }  
+			} 
+		  app1 的 contentprovider 内容	
+			//主要提供 delete() insert() query() update() getType()外部访问接口,	
+			import android.content.ContentProvider;    
+			import android.content.ContentUris;    
+			import android.content.ContentValues;    
+			import android.content.UriMatcher;    
+			import android.database.Cursor;    
+			import android.database.SQLException;    
+			import android.database.sqlite.SQLiteDatabase;    
+			import android.net.Uri;        
+			public class MyProvider extends ContentProvider {    
+			    
+			    DBHelper mDbHelper = null;    
+			    SQLiteDatabase db = null;    
+			    
+			    private static final UriMatcher mMatcher; //文本筛选器
+			    static{    
+			        mMatcher = new UriMatcher(UriMatcher.NO_MATCH);  
+				//添加筛选筛选项,
+				//当 match()匹配 content://cn.scu.myprovider/user时, 返回1
+			        mMatcher.addURI(Constant.AUTOHORITY,Constant.TABLE_NAME, Constant.ITEM);    
+				//当 match()匹配 content://cn.scu.myprovider/user/#时, 返回2
+			        mMatcher.addURI(Constant.AUTOHORITY, Constant.TABLE_NAME+"/#", Constant.ITEM_ID);    
+			    }    
+			    
+			    @Override    
+			    public int delete(Uri uri, String selection, String[] selectionArgs) {    
+			        // TODO Auto-generated method stub    
+			        return 0;    
+			    }    
+			    
+			    @Override    
+			    public String getType(Uri uri) {  //这个函数一般 返回当前uri所代表的数据的 MIME 类型  
+			        switch (mMatcher.match(uri)) {    
+			        case Constant.ITEM:    
+			            return Constant.CONTENT_TYPE;    
+			        case Constant.ITEM_ID:    
+			            return Constant.CONTENT_ITEM_TYPE;    
+			        default:    
+			            throw new IllegalArgumentException("Unknown URI"+uri);    
+			        }    
+			    }    
+			    
+			    @Override    
+			    public Uri insert(Uri uri, ContentValues values) {    
+			        // TODO Auto-generated method stub    
+			        long rowId;    
+			        if(mMatcher.match(uri)!=Constant.ITEM){    
+			            throw new IllegalArgumentException("Unknown URI"+uri);    
+			        }    
+			        rowId = db.insert(Constant.TABLE_NAME,null,values);    
+			        if(rowId>0){    
+			            Uri noteUri=ContentUris.withAppendedId(Constant.CONTENT_URI, rowId);    
+			            getContext().getContentResolver().notifyChange(noteUri, null);    
+			            return noteUri;    
+			        }    
+			    
+			        throw new SQLException("Failed to insert row into " + uri);    
+			    }    
+			    
+			    @Override    
+			    public boolean onCreate() {    
+			        // TODO Auto-generated method stub    
+			        mDbHelper = new DBHelper(getContext());    
+			    
+			        db = mDbHelper.getReadableDatabase();    
+			    
+			        return true;    
+			    }    
+			    
+			    @Override    
+			    public Cursor query(Uri uri, String[] projection, String selection,    
+			            String[] selectionArgs, String sortOrder) {    
+			        // TODO Auto-generated method stub    
+			        Cursor c = null;    
+			        switch (mMatcher.match(uri)) {    
+			        case Constant.ITEM:    
+			            c =  db.query(Constant.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);    
+			            break;    
+			        case Constant.ITEM_ID:    
+			            c = db.query(Constant.TABLE_NAME, projection,Constant.COLUMN_ID + "="+uri.getLastPathSegment(), selectionArgs, null, null, sortOrder);    
+			            break;    
+			        default:    
+			            throw new IllegalArgumentException("Unknown URI"+uri);    
+			        }    
+			    
+			        c.setNotificationUri(getContext().getContentResolver(), uri);    
+			        return c;    
+			    }    
+			    
+			    @Override    
+			    public int update(Uri uri, ContentValues values, String selection,    
+			            String[] selectionArgs) {    
+			        // TODO Auto-generated method stub    
+			        return 0;    
+			    }    
+			    
+			}    
+		  app1 的 Androidmanifest.xml 添加这个:
+		        <provider android:name="MyProvider" android:authorities="cn.scu.myprovider" />
+			给系统注册了这个 contentprovider 的 域名,其他app访问这位个provider要通过这个域名
+		  要访问 app1 contentprovider 的 app 的activity,都需要的内容
+			//建立一个 ContentResolver 类实例
+			private ContentResolver mContentResolver = null; 	
+			mContentResolver = getContentResolver();
+			//给  contentprovider 添加数据
+		        ContentValues values = new ContentValues();  //新建一个ContentValues
+	                values.put(Constant.COLUMN_NAME, "fanrunqi"+i);  //添加内容,这里添加的是 name:fanrunqi 
+                        mContentResolver.insert(Constant.CONTENT_URI, values);	//上传到 contentprovider
+			注意,ContentResolver.insert会根据 uri Constant.CONTENT_URI(constant.java定义的常量)
+			而且 Constant.CONTENT_URI直接指向了 user的这张数据表单
+			找到了 app1 的contentprovider 的insert, 然后添加数据到 sqlite数据库
+			//查询 contentprovider的内容, 即查询 sqlite数据库的内容
+			private Cursor cursor = null;  
+			cursor = mContentResolver.query(Constant.CONTENT_URI, 
+				new String[]{Constant.COLUMN_ID,Constant.COLUMN_NAME}, null, null, null);  
+			同样ContentResolver.query会根据 uri Constant.CONTENT_URI(constant.java定义的常量)
+			找到了 app1 的contentprovider 的query, 查询sqlite数据库 相关数据
+			源码例子:
+			import android.app.Activity;
+			import android.content.ContentResolver;
+			import android.content.ContentValues;
+			import android.database.Cursor;
+			import android.os.Bundle;
+			import android.widget.TextView;
+
+			public class MainActivity extends Activity {
+			    private ContentResolver mContentResolver = null; 
+			    private Cursor cursor = null;  
+			         @Override
+			        protected void onCreate(Bundle savedInstanceState) {
+			        	// TODO Auto-generated method stub
+			        	super.onCreate(savedInstanceState);
+			        	setContentView(R.layout.activity_main);
+			        	
+			        	   TextView tv = (TextView) findViewById(R.id.tv);
+							
+			        		mContentResolver = getContentResolver();  
+			        		tv.setText("ÌíŒÓ³õÊŒÊýŸÝ ");
+			                for (int i = 0; i < 10; i++) {  
+			                    ContentValues values = new ContentValues();  
+		                    values.put(Constant.COLUMN_NAME, "fanrunqi"+i);  
+			                    mContentResolver.insert(Constant.CONTENT_URI, values);  
+			                } 
+			                
+			            	tv.setText("²éÑ¯ÊýŸÝ ");
+			                cursor = mContentResolver.query(Constant.CONTENT_URI, new String[]{Constant.COLUMN_ID,Constant.COLUMN_NAME}, null, null, null);  
+			                if (cursor.moveToFirst()) {
+			                	String s = cursor.getString(cursor.getColumnIndex(Constant.COLUMN_NAME));
+			                	tv.setText("µÚÒ»žöÊýŸÝ£º "+s);
+			                }
+			        }
+			         
+			}  		
+cleanfloat 进阶版 easytouch, 有以下可学习点!!!
+	这里使用windowmanager显示浮动按钮,使用activity显示操作窗口
+	使用trigger 触发是否显示 浮动按钮
+	各种runnable 小任务,而且是使用 handler.post触发运行的,未知是在UI线程还是其他线程运行
+	还有所谓的 task, 不知道又是啥??
+	移植测试,需要注意,除了修改 .java 头 com.xxx.xxx 为自己的名字外,
+		特别注意,这里自己新建了一个 自定义view 可视部件, 需要在layout用到这个可视部件的xml上做需要的头修改
+		<com.xxx.xxx.Wave_view  >
+		学习如何自定义view 可视部件
+	
+	
+
+		
+
+
+20171124
+ubuntu 根目录空间不足: 因为长年累月的log挤爆了空间!!!
+	su到 root
+	echo > /var/log/syslog.1	//清空syslog文件
+	echo > /var/log/kernlog		//清空kernlog文件
+ubuntu安装 apk (插入手机后)
+	adb start-server
+	adb devices		//查看设备 得到设备号 xxxcccxxxccc
+	adb -s xxxcccxxxccc install ~/temp/app/xxxx.apk		//安装apk
+ubuntu 编译反编译apk工具 
+	apktool (提取apk)
+		Quick Check  
+		    Is at least Java 1.7 installed?
+		    Does executing java -version on command line / command prompt return 1.7 or greater?
+		    If not, please install Java 7+ and make it the default.
+		Linux:   (http://blog.csdn.net/u012207345/article/details/77834025)
+		    Download Linux wrapper script (Right click, Save Link As apktool)
+		    Download apktool-2 (find newest here)
+		    Rename downloaded jar to apktool.jar
+		    Move both files (apktool.jar & apktool) to /usr/local/bin (root needed) 
+		    对应的命令：sudo mv apktool apktool.jar /usr/local/bin
+		    Make sure both files are executable (chmod +x) 
+		    对应的命令：sudo chmod +x apktool 验证：如果文件可执行，ls出的文件名以绿色字体显示
+		    Try running apktool via cli	
+		Note - Wrapper scripts are not needed, but helpful so you don’t have to type java -jar apktool.jar over and over.
+	dex2jar (把class.dex反译为jar)
+	ubuntu 14.04 反编译apk
+		需要两个程序：dex2jar和jd-gui.
+		下载：
+		http://code.google.com/p/dex2jar/downloads/detail?name=dex2jar-0.0.9.15.zip
+		http://jd.benow.ca/jd-gui/downloads/jd-gui-0.3.5.linux.i686.tar.gz
+		先将apk文件修改为zip然后解压，再解压dex2jar，然后用其中的dex2jar.sh脚本将apk里面的classes.dex转换为jar包：
+		./dex2jar.sh classes.dex
+		运行后生成classes_dex2jar.jar再用jd-gui打开jar包就能看到源码了。
+		ubuntu 14.04运行jd-gui需要安装一些包：
+		sudo apt-get install gtk2-engines-murrine:i386 libgtk2.0-0:i386 libcanberra-gtk-module:i386 \
+		libgtk2.0-0:i386 libxxf86vm1:i386 libsm6:i386 lib32stdc++6 lib32ncurses5 lib32bz2-1.0 \
+		libgtk2.0-0:i386 libxxf86vm1:i386 libsm-dev:i386 libcanberra-gtk3-module:i386
+	
+浮译:
+	easytouch: 桌面上的按钮!
+		 : 截屏
+
+
+
 
 
  
