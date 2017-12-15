@@ -8026,17 +8026,98 @@ easytouch分析!!
 			        }
 			         
 			}  		
-cleanfloat 进阶版 easytouch, 有以下可学习点!!!
-	这里使用windowmanager显示浮动按钮,使用activity显示操作窗口
+cleanfloat 进阶版 easytouch, 有以下可学习点!!! (http://blog.csdn.net/hello_1995/article/details/52984309)
+	android studio 项目 的 project管理文件是 .iml
+	这里使用windowmanager显示浮动按钮,浮动按钮按下后,使用新activity显示操作窗口
 	使用trigger 触发是否显示 浮动按钮
-	各种runnable 小任务,而且是使用 handler.post触发运行的,未知是在UI线程还是其他线程运行
-	还有所谓的 task, 不知道又是啥??
+	还有所谓的 task, 创建新activity用 NEW_TASK标记,还有在在linearlayout使用startactivity!!
 	移植测试,需要注意,除了修改 .java 头 com.xxx.xxx 为自己的名字外,
 		特别注意,这里自己新建了一个 自定义view 可视部件, 需要在layout用到这个可视部件的xml上做需要的头修改
 		<com.xxx.xxx.Wave_view  >
 		学习如何自定义view 可视部件
+    	getSystemService(Context.ACTIVITY_SERVICE) 使用!!!
+	判断是否在桌面
+	    获取 系统管理activity的后台服务 接口实例
+		ActivityManager mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+	    获取 运行着的的任务们的名称, 并插入到队列里,(这里只获取一个,只获取正在执行着的)
+		List<RunningTaskInfo> rti = mActivityManager.getRunningTasks(1);
+	    获取 管理应用包 接口实例
+		PackageManager packageManager = this.getPackageManager(); //this指调用次函数所在的activity class 或者service class
+	    通过接口实例 通过 intent 唤起进程搜索机子装的所有应用包并把返回的对应ResolveInfo插入到队列里
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+	        intent.addCategory(Intent.CATEGORY_HOME);	//其实只搜与home有关的应用包
+	        List<ResolveInfo> resolveInfo = packageManager.queryIntentActivities(intent,
+                PackageManager.MATCH_DEFAULT_ONLY);
+	    把应用包的名字加入到 队列
+	        for (ResolveInfo ri : resolveInfo) {
+		    List<String> names = new ArrayList<String>();
+	            names.add(ri.activityInfo.packageName);
+	        }
+	    通过contains比较安装的桌面相关的应用包里,是否有正在执行的任务(桌面任务)
+		List<String>.contains(rti.get(0).topActivity.getPackageName());	//contains是比较函数
+        runnable的一种用法:
+		    private Handler handler = new Handler();
+		    private Runnable runnable = new Runnable() {
+		        @Override
+		        public void run() {
+				....
+		            }
+		        }
+		    };	
+	            handler.post(runnable); //给ui线程添加这个的runnable执行 一次,把runnable发到handler执行
+       	            handler.postDelayed(runnable, 1000); //1秒后才把runnable发到handler执行
+               	    handler.removeCallbacks(runnable); //如果 runable在handler队列里,移除出handler列表,如果正在执行,立即停止并移除!
+	读取内存情况:
+	    通过读取 linux 内核信息得到 内存信息(这里获取内存总大小)
+		String dir = "/proc/meminfo";
+	        FileReader fr = new FileReader(dir);
+	        BufferedReader br = new BufferedReader(fr, 2048);
+	        String memoryLine = br.readLine();
+	        String subMemoryLine = memoryLine.substring(memoryLine.indexOf("MemTotal:"));	//读取总内存大小
+	        br.close();
+	        totalMemorySize = Long.parseLong(subMemoryLine.replaceAll("\\D+", "")) * 1024;	//转换数据格式
+	    获取得知可用内容大小
+                ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo(); 
+			//获取 内存信息 接口实例
+                ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+			//获取 系统管理activity的后台服务 接口实例
+                manager.getMemoryInfo(memoryInfo);
+                ret = memoryInfo.availMem; 	//得到可用呢内存信息
+	亮度:
+		import android.provider.Settings;
+		//获得此刻的亮度模式
+		Settings.System.getInt(aContentResolver,Settings.System.SCREEN_BRIGHTNESS_MODE)	
+		//设置自动亮度模式
+	        Settings.System.putInt(activity.getContentResolver(),
+		    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+		//设置常规亮度模式
+ 	        Settings.System.putInt(activity.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+		//获取屏幕亮度
+		Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS);
+		//设置屏幕亮度
+		参数 activity, brightness
+                WindowManager.LayoutParams lp = activity.getWindow().getAttributes();
+                lp.screenBrightness = Float.valueOf(brightness) * (1f / 255f);
+                activity.getWindow().setAttributes(lp);
+		//保存亮度设置状态
+		参数 ContentResolver resolver, int brightness
+	        Uri uri = Settings.System.getUriFor("screen_brightness");
+                Settings.System.putInt(resolver, "screen_brightness", brightness);
+                resolver.notifyChange(uri, null);
+		
+
+	windowmanager 加载浮动view的重点 
+	easyview的
+            mTouchView = LayoutInflater.from(mContext).inflate(R.layout.easy_touch_view, null);   //获取整个layout 整view文件
+            mIconImageView = (ImageView) mTouchView.findViewById(R.id.easy_touch_view_imageview); //获取 整view文件里的莫个view
+	cleanfloat的 (注意区别!!!)
+            LayoutInflater.from(context).inflate(R.layout.float_window, this);
+            View view = findViewById(R.id.window_layout);
 	
-	
+图片裁剪 https://github.com/chendongMarch/PictureEditor
 
 		
 
@@ -8083,6 +8164,87 @@ ubuntu 编译反编译apk工具
 浮译:
 	easytouch: 桌面上的按钮!
 		 : 截屏
+
+
+
+
+
+20171209
+mario android-game
+	移植相关
+		添加 libs, 把要用到的.jar 放到 libs里,并在 project structure -> dependencies -> 把相关库加入
+		应用除了用到res的资源以外还有assets, assets必须和res同一阶目录里
+		遇到 > java.lang.RuntimeException: com.android.builder.dexing.DexArchiveMergerException: Unable to merge 
+			表示重用了库文件,在 project structure -> dependencies -> 把相关库移除
+			例如中这里dependencies里添加的gameapi.jar库就有support.v4库,
+			如果这时在dependencies里再添加一个support.v4库就发生冲突了
+	thread runnable 新用法:
+		public class LoadActivity extends GameActivity  implements Runnable
+		{
+			@Override
+			protected void onCreate(Bundle savedInstanceState) 
+			{
+				new Thread(this).start();
+				...
+			}
+		
+			@Override
+			public void run() 
+			{
+				...		
+				Intent i = new Intent(this,MenuActivity.class);
+				this.startActivity(i);
+				this.finish();
+			}
+		}		
+	这里的activity 没有显示 res/layout的模板,
+		而是自己super.setContentView(new XXXView(this)); 来显示 XXXView 的内容
+		而 XXXView 就是继承View 的 游戏画面i子集
+	
+android_studio 装 tensorflow
+	git clone https://github.com/tensorflow/tensorflow/
+	然后 android_studio 打开一个工程, tensorflow/tensorflow/examples/android,注意只是android只是一个文件夹
+		但是打开后 studio会通过 gradle配置好一切得到一个可用项目,gradle配置时需要翻墙联网
+	编译调试运行,出错:Error:Execution failed for task ':buildNativeBazel'.
+		> A problem occurred starting process 'command '/usr/local/bin/bazel''
+		tensorflow通过 bazel编译的,需要按装bazel:(ubuntu14.04)
+			//安装jdk 8
+			sudo add-apt-repository ppa:webupd8team/java
+			sudo apt-get update && sudo apt-get install oracle-java8-installer
+			//安装 bazel (需要翻强)
+			echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+			curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+			sudo apt-get update && sudo apt-get install bazel			
+	bazel编译问题:https://github.com/bazelbuild/bazel/issues/2333 (未解决)
+		//android_studio编译:
+		Error:org.gradle.process.internal.ExecException: Process 'command '/usr/bin/bazel'' finished with non-zero exit value 1
+		//尝试主动编译
+		bazel build -c opt /home/kingders/android/project/tensorflow/tensorflow/tensorflow/examples/android:tensorflow_demo
+		WARNING: ignoring http_proxy in environment.
+		ERROR: The 'build' command is only supported from within a workspace.
+
+
+
+
+
+
+
+
+20171215
+重新 android_studio 装 tensorflow 因为太多错误!!!
+	安装 bazel: (先apt-get remove掉 之前装的bazel ) http://blog.csdn.net/masa_fish/article/details/54096996
+		下载 bazel-0.8.1-installer-linux-x86_64.sh
+		chmod +x bazel-0.8.3-installer-linux-x86_64.sh
+		./bazel-0.8.1-installer-linux-x86_64.sh --user
+		设置Bazel 环境变量
+			sudo gedit ~/.bashrc
+			在 ~/.bashrc文件的末尾添加:export PATH='$PATH:$/home/kingders/bin'
+		添加其他依赖
+			sudo apt-get install python-numpy python-dev python-wheel
+			sudo apt-get install libcupti-dev
+	下载 tensorflow:
+		git clone https://github.com/tensorflow/tensorflow
+	
 
 
 
