@@ -8211,7 +8211,7 @@ android_studio 装 tensorflow
 			//安装jdk 8
 			sudo add-apt-repository ppa:webupd8team/java
 			sudo apt-get update && sudo apt-get install oracle-java8-installer
-			//安装 bazel (需要翻强)
+			//apt-get安装 bazel (需要翻强)
 			echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
 			curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 			sudo apt-get update && sudo apt-get install bazel			
@@ -8232,21 +8232,91 @@ android_studio 装 tensorflow
 
 20171215
 重新 android_studio 装 tensorflow 因为太多错误!!!
-	安装 bazel: (先apt-get remove掉 之前装的bazel ) http://blog.csdn.net/masa_fish/article/details/54096996
+	源码安装 bazel: (先apt-get remove掉 之前装的bazel ) http://blog.csdn.net/masa_fish/article/details/54096996
 		下载 bazel-0.8.1-installer-linux-x86_64.sh
 		chmod +x bazel-0.8.3-installer-linux-x86_64.sh
 		./bazel-0.8.1-installer-linux-x86_64.sh --user
 		设置Bazel 环境变量
 			sudo gedit ~/.bashrc
-			在 ~/.bashrc文件的末尾添加:export PATH='$PATH:$/home/kingders/bin'
+			在 ~/.bashrc文件的末尾添加:export PATH=$PATH:$/home/kingders/bin
 		添加其他依赖
 			sudo apt-get install python-numpy python-dev python-wheel
 			sudo apt-get install libcupti-dev
-	下载 tensorflow:
+	下载 tensorflow (源码):
 		git clone https://github.com/tensorflow/tensorflow
-	
+		移植安卓项目前需要先到 tensorflow 根目录 ./configure一下, 
+		甚至编译一下:
+		编译CPU版：
+			bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+			(注意bazel是源码安装版本,apt-get安装版本这里会出错!!)
+		编译GPU版：
+			bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+			bazel-bin/tensorflow/tools/pip_package/build_pip_package  /tmp/tensorlflow_pkg
+		安装 tensorflow.whl包:(出错)
+			cd /tmp/tensorlflow_pkg
+			sudo pip install tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
+The directory '/home/kingders/.cache/pip/http' or its parent directory is not owned by the current user and the cache has been disabled. Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+The directory '/home/kingders/.cache/pip' or its parent directory is not owned by the current user and caching wheels has been disabled. check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl is not a supported wheel on this platform.
+		先不管,因为甚至也不知道怎么用!!
+		事时上,只要./configure 后,就会给android建立相关的 bazel workspace,就可以在studio上编译了!!
+	android studio 编译 demo
+		然后 android_studio 打开一个工程, tensorflow/tensorflow/examples/android,注意只是android只是一个文件夹
+		这时studio会自动生成一个项目
+		build.gradle 修改:bazel路径
+			def bazelLocation = '/home/kingders/bin/bazel'
+		---/tensorflow/tensorflow/WORKSPACE修改:
+			android_sdk_repository(
+			    name = "androidsdk",
+			    api_level = 23,
+			    # Ensure that you have the build_tools_version below installed in the
+			    # SDK manager as it updates periodically.
+			    build_tools_version = "26.0.1",
+			    # Replace with path to Android SDK on your system
+			    path = "/home/kingders/android/Sdk",
+			)
+			android_ndk_repository(
+			    name="androidndk",
+			    path="/home/kingders/android/Sdk/ndk-bundle",
+			    # This needs to be 14 or higher to compile TensorFlow.
+			    # Please specify API level to >= 21 to build for 64-bit
+			    # archtectures or the Android NDK will automatically select biggest
+			    # API level that it supports without notice.
+			    # Note that the NDK version is not the API level.
+			    api_level=14)
+		注意,编译时自动下载tensorflow的demo学习模型并不成功,所以人工下载(翻强)
+			模型地址可以从---/tensorflow/tensorflow/WORKSPACE看到:
+			浏览器分别打开:
+			http://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
+			http://storage.googleapis.com/download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_android_export.zip
+			http://storage.googleapis.com/download.tensorflow.org/models/mobile_multibox_v1a.zip
+			http://storage.googleapis.com/download.tensorflow.org/models/stylize_v1.zip
+			http://storage.googleapis.com/download.tensorflow.org/models/speech_commands_v0.01.zip
+			都解压到:
+			/home/kingders/android/project/tensorflow/tensorflow/tensorflow/examples/android/assets
+			然后 build.gardle注释掉这段:
+				//apply from: "download-models.gradle"
+				这样就会编译过程中执行下载解压model的操作了
+		成功编译运行demo 到 google手机!!
+		
+	通过这次demo,还认识到,
+		一个application,有多个activity,除了我们通常只有一个activity是这个app的入口,并在桌面上设有图标
+		但是,如果在androidmanifest.xml,的多个activity 都设置以下特性:
+	            <intent-filter>
+	                <action android:name="android.intent.action.MAIN" />
+	                <category android:name="android.intent.category.LAUNCHER" />
+	            </intent-filter>
+		这个activity就会在桌面上拥有自己的启动图标,点击打开进入对应activity
+		就是说,同一个app 可拥有多个桌面图标,拥有多个入口!!!
 
 
+
+
+
+
+
+20171218
+分析 android tensorflow
 
 
 
