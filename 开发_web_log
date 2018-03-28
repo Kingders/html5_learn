@@ -10877,6 +10877,7 @@ Session 会话。session是抽象模型的实现者。
 			所以，要想保证搜索深度，就只能放弃遍历，改为随机采样
 			这就是为什么在没有MCTS（蒙特卡罗搜树）类的方法之前，机器围棋的水平几乎是笑话。
 	强化学习（RL）
+		不停地重复执行，获得反馈，直到收敛到最佳效果
 		细看下来，分明与监督学习（SL），无监督学习（UL）是不同的类别，RL更像控制系统家族里的。
 		是的，RL里流着控制的血液，披着机器学习的外衣，这是因为它需要data，需要training以此来支持决策。
 		RL可以decision-making，不同于决策树之类的决策（称为预测比较好），是控制角度的决策，
@@ -10894,7 +10895,113 @@ Session 会话。session是抽象模型的实现者。
 				RL可以进行lifelong形式的学习。
 				RL有“生命”的【你可能也不知道你训练出来的模型到底能干什么】，
 				SL没有“生命”。
+强化学习方法汇总：
+	model-free RL（不理解环境）不断重复直接执行，等待现实反馈，			
+		方法有：Q-learning，sarsa，policy-Gradients	
+	model-base RL（理解环境）： 比较上面的方法，在这里多了一个构造虚拟环境的步骤，先在虚拟环境中实现后评估是否将要执行的行为！！
+		然后再在真实世界上执行，然后等待现实反馈
+		方法也是有：Q-learning，sarsa，policy-Gradients	
 
+	基于概率（Police-based RL）：根据概率，随机执行动作，概率越大的动作，执行的可能性越高
+		对于连续动作来说，这个思路效果更好
+		方法有police-gradients
+	基于价值（Value）：根据价值，执行价值最高的动作。
+		方法有Q-learning，sarsa
+
+	回合更新（Monte-Carlo update）：
+		游戏结束后，才更新学习数据
+		方法有基础版police-gradients，Monte-Carlo-learning
+	单步更新（Temporal-Difference update）：
+		游戏中每一步，都更新学习数据
+		方法有Q-learning，sarsa，升级版police-gradients
+
+	在线学习（on-policy）
+		边执行边学习
+		方法有sarsa（入），sarsa
+	离线学习（off-policy）
+		把执行的记录全程记录下，之后在学习，同样可以选着看着别人的执行记录学习	
+		方法有Deep Q network，Q-learning
+
+复习;
+
+	namalize正则化是在 activation激励 之前 吧输出结果规范到一个区间里，然后再activation激励，这样大多数输出值不会在0和1两个极限饱和值上，
+		注意是batch marmalize ，跟batch 有关系，不是简单的narmalize，要看理论式子
+	activation/激励是把输出的结果限制在 0-1之间，但是很多激励后的结果都在0或则1附近的饱和区域,不利于学习的梯度传递，
+		容易梯度消失或爆炸，所以在激励前先 namalize正则化
+		有Relu 等等 	
+	optimizer优化器，优化学习率 包括什么Adma， 还有 dropout什么的
+		dropout不算是一个正规正矩的优化器，他的工作是，每次网络工作时，都随机抛弃一部分的神经元的作用，从而避免过度拟合
+		还有一个叫分支 叫正规化操作
+		（例如L1,L2regulation正规化，是处理 误差/交叉熵的一种方法，能很好规避过拟合的发生）
+	卷积和池化区别：卷积是通过卷积核过滤图片得到一张特征图，不同卷积核过滤同一张图片得到不同特征图
+		       池化是把卷积得到特征图划分多个区域，然后从每个区域中又选出最有意义的特征值，比如说区域里的最大值，
+		       本质上卷积和池化操作都是差不多，卷积的过滤出特征值和池化的选出特征值感觉差不多的操作，
+		       但是卷积核是轮寻步进区域的，而池化是操作的是，把图片划分的多个区域！
+	RNN网络要再学习！！，深入底层那种
+
+Q-learning：（未总结）
+sarsa：
+sarsa（入）：
+Deep Q-Learing Net（DQN）：
+police-gradients：
+Actor Critic：组合了police-gradients Q-learning 
+Deep Deterministic Policy Gradient (DDPG)：Actor Critic + DQN
+A3C (Asynchronous Advantage Actor-Critic)：相当于多个Actor Critic各自独立学习，又共享学习信息，（类比多进程并行工作）
+
+
+
+
+PyTorch：
+
+tensorflow：
+	loss 跟 cross-entropy（向量loss）
+	dropout
+	注意 names_scope 和 varible_scope 区别和使用规则
+
+	
+
+自编码autoencoder：
+	无监督学习过程例子
+	一张图片，经过encoder 压缩出一串数据，然后经过decoder自画图片，再encoder得到一串数据，
+	前后两两串数据应该几乎一样，不一样的话就有误差，经过误差返回传导修改encoder和decoder学习模型！！
+	又或者，直接对比两张图片所有像素信息的误差，经过误差返回传导修改encoder和decoder学习模型！！
+
+GAN：
+	谁随机生成然后与样本对比，然后学习，直到与样品越来越像
+	训练一个网络专门生成样本
+	训练另一个网路比较 生成样本 与实际样本，
+	取得对应误差 反向更新这两个网络。
+	直到 生成样本与 实际样本越来越相似
+
+迁移学习
+	就是用别人训练好的网络，去头去尾，根据需求组合成新网络，减少更多训练时间
+
+交叉验证：
+	同一堆样品，做多个回合的训练，
+	每一回合有计划或随机分成训练组和验证组，用训练组训练，用验证组验证
+
+scikit-learning：
+	很多模型都建立好，简单填参数使用的库，还有很多模拟建立样本数据的函数
+
+theano：
+	比tensorflow 更学术
+	莫烦讨论的 分类例子的算法和我们认识的cnn 分类算法不一样
+	莫烦那输出是一个数，是一个0和1的二值分类
+	而我们认识的cnn 分类算法输出是一个向量，是一个多类分类，样品属于哪一类，对应输出向量的那一维为1,其他维为0
+	所谓one-hot，就是诸如上述的 某一维为1其他为0的向量
+
+keras：
+	以tensorflow或 theano 做 底层基础的高级操作库
+	需要清楚当前时刻的keras是以那个做底层，
+	直接import keras 可以看到相关信息，不是自己需要的底层基础要及时修改配置
+	
+RL：
+
+Q-learing：
+	
+
+理论学习路线：莫烦PyTorch ->莫烦tensoeflow（）->莫烦sciki-learning-> 莫烦theano-> 莫烦 kera
+	     莫烦RL强化学习（现在）
 
 
 前馈网络对于机器学习的从业者是极其重要的。它们是许多重要商业应用的基
